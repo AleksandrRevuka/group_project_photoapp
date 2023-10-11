@@ -1,23 +1,27 @@
 import logging
+import time
+from ipaddress import ip_address, ip_network
+from typing import Callable
 
 import click
 import redis.asyncio as redis_async
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
-
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from fastapi_limiter import FastAPILimiter
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.conf.config import init_async_redis
+from src.conf.config import settings, init_async_redis
 from src.database.db import get_db
-from src.routes import auth, users
+from src.routes import addressbook, auth, users
 
 logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(addressbook.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 
 
