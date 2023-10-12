@@ -10,3 +10,4 @@ postgres-data/
 .vscode
 .pytest_cache
 .idea
+migrations
