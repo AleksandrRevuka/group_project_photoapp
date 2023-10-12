@@ -11,3 +11,4 @@ postgres-data/
 .pytest_cache
 .idea
 migrations
+env.txt

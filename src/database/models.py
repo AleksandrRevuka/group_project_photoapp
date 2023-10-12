@@ -11,15 +11,23 @@ class Base(DeclarativeBase):
     """
     Base class for SQLAlchemy models.
     """
+
     pass
 
 
 class Role(enum.Enum):
+    """
+    Enum representing user roles.
+
+    Attributes:
+        admin (str): Admin role.
+        moderator (str): Moderator role.
+        user (str): User role.
+    """
 
     admin: str = "admin"
     moderator: str = "moderator"
     user: str = "user"
-
 
 
 class User(Base):
@@ -38,7 +46,6 @@ class User(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
-
 
 
 picture_tags = Table(
@@ -85,4 +92,3 @@ class Picture(Base):
     comments = Mapped[relationship("Comment", secondary=picture_comments, backref="pictures")]
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
-
