@@ -76,7 +76,7 @@ class Comment(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[relationship("User", back_populates="comments")] = relationship("User", back_populates="comments")
     picture_id: Mapped[int] = mapped_column(ForeignKey("pictures.id"))
-    picture: Mapped[relationship("Picture", back_populates="comments")] = relationship("Picture", back_populates="comments")
+    picture: Mapped[list["Picture"]] = relationship("Picture", back_populates="comments")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
