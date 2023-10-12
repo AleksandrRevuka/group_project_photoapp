@@ -125,7 +125,7 @@ async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)) -> dic
     await repository_users.confirmed_email(email, db)
     return {"message": "Email confirmed"}
 
- 
+
 @router.post("/request_email")
 async def request_email(
     body: RequestEmail, background_tasks: BackgroundTasks, request: Request, db: AsyncSession = Depends(get_db)

@@ -20,6 +20,9 @@ class Auth:
     ALGORITHM = settings.algorithm
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
     
+    def __init__(self):
+        self._redis_cache = None
+    
     @property
     async def redis_cache(self):
 
@@ -142,14 +145,14 @@ class Auth:
         except JWTError:
             raise credentials_exception
 
-        user_r = await self.redis_cache.get(f"user:{email}")
+        user_r = await (await self.redis_cache).get(f"user:{email}")
         if user_r is None:
             user = await repository_users.get_user_by_email(email, db)
             if user is None:
                 raise credentials_exception
             user_r = pickle.dumps(user)
-            await self.redis_cache.set(f"user:{email}", user_r)
-            await self.redis_cache.expire(f"user:{email}", 900)
+            await (await self.redis_cache).set(f"user:{email}", user_r)
+            await (await self.redis_cache).expire(f"user:{email}", 900)
 
         return pickle.loads(user_r)
 
