@@ -55,12 +55,12 @@ picture_tags = Table(
     Column('tag_id', Integer, ForeignKey('tags.id'))
 )
 
-picture_comments = Table(
-    "picture_comments",
-    Base.metadata,
-    Column('picture_id', Integer, ForeignKey("pictures.id")),
-    Column("user_id", Integer, ForeignKey("users.id"))
-)
+# picture_comments = Table(
+#     "picture_comments",
+#     Base.metadata,
+#     Column('picture_id', Integer, ForeignKey("pictures.id")),
+#     Column("user_id", Integer, ForeignKey("users.id"))
+# )
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -89,6 +89,6 @@ class Picture(Base):
     user: Mapped[relationship("User", back_populates="pictures")] = relationship("User", back_populates="pictures")
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     tags = Mapped[relationship("Tag", secondary=picture_tags, backref="pictures")]
-    comments = Mapped[relationship("Comment", secondary=picture_comments, backref="pictures")]
+    comments = Mapped[relationship("Comment", backref="pictures")]
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

@@ -12,3 +12,4 @@ postgres-data/
 .idea
 migrations
 env.txt
+alembic.ini
