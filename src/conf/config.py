@@ -29,8 +29,6 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
 
-    # allowed_ips: str
-
     cloudinary_name: str = "name"
     cloudinary_api_key: str = "1234567890"
     cloudinary_api_secret: str = "secret"
@@ -41,6 +39,6 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_database_url(self) -> str:
-        return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_domain}/{self.postgres_db}"
+        return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_domain}:{self.postgres_port}/{self.postgres_db}"
 
 settings = Settings()  # type: ignore

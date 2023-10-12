@@ -1,27 +1,23 @@
 import logging
-import time
-from ipaddress import ip_address, ip_network
-from typing import Callable
 
 import click
 import redis.asyncio as redis_async
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse
+
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi_limiter import FastAPILimiter
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.conf.config import settings, init_async_redis
+from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import addressbook, auth, users
+from src.routes import auth, users
 
 logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
 app.include_router(auth.router, prefix="/api")
-app.include_router(addressbook.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 
 
@@ -35,11 +31,12 @@ async def startup() -> FastAPILimiter:
 
     :return: A fastapilimiter object
     """
+    r = await init_async_redis()
     try:
-        r = await init_async_redis()
         await FastAPILimiter.init(r)
     except redis_async.ConnectionError as e:
-        click.secho(f"ERROR redis: {e}", bold=True, fg="red", italic=True)
+        color_error = click.style(f"Error connecting to Redis: {str(e)}", bold=True, fg="red", italic=True)
+        logger.error(e, extra={"color_message": color_error})
         raise HTTPException(status_code=500, detail="Error connecting to the redis")
 
 
@@ -73,7 +70,8 @@ async def healthchecker(db: AsyncSession = Depends(get_db)) -> dict:
             raise HTTPException(status_code=500, detail="Database is not configured correctly")
         return {"message": "Welcome to FastAPI!"}
     except Exception as e:
-        print(e)
+        color_error = click.style(e, bold=True, fg="red", italic=True)
+        logger.error(e, extra={"color_message": color_error})
         raise HTTPException(status_code=500, detail="Error connecting to the database")
 
 
