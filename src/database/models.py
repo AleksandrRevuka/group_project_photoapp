@@ -57,6 +57,7 @@ class Tag(Base, BaseWithTimestamps):
     __tablename__ = "tags"
     id: Mapped[int] = mapped_column(primary_key=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+
 class Comment(Base, BaseWithTimestamps):
     __tablename__ = "comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -65,6 +66,7 @@ class Comment(Base, BaseWithTimestamps):
     user: Mapped[relationship("User", back_populates="comments")] = relationship("User", back_populates="comments")
     picture_id: Mapped[int] = mapped_column(ForeignKey("pictures.id"))
     picture: Mapped[list["Picture"]] = relationship("Picture", back_populates="comments")
+
 class Picture(Base, BaseWithTimestamps):
     __tablename__ = "pictures"
     id: Mapped[int] = mapped_column(primary_key=True)
