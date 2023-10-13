@@ -1,9 +1,13 @@
+import cloudinary.uploader
 from libgravatar import Gravatar
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.exc import NoResultFound
+from fastapi import UploadFile
 
 from src.database.models import User
 from src.schemas.user import UserModel
+from src.conf.config import init_cloudinary
 
 
 async def get_user_by_email(email: str, db: AsyncSession) -> User | None:
@@ -73,23 +77,20 @@ async def confirmed_email(email: str, db: AsyncSession) -> None:
         await db.commit()
 
 
-async def update_avatar(email, url: str, db: AsyncSession) -> User | None:
-    """
-    The update_avatar function takes an email and a url as arguments.
-    It then uses the get_user_by_email function to retrieve the user from the database.
-    The avatar property of that user is set to be equal to the url argument, and then
-    the database is committed with those changes.
-
-    :param email: Get the user from the database
-    :param url: str: Pass the url of the avatar image to be updated
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A user object
-    """
+async def edit_my_profile(email: str, file: UploadFile, name: str, db: AsyncSession) -> User | None:
     user = await get_user_by_email(email, db)
     if user:
-        user.avatar = url
+        if name:
+            user.username = name
+        init_cloudinary()
+        r = cloudinary.uploader.upload(file.file, public_id=f"avatar/{user.username}", overwrite=True)
+        src_url = cloudinary.CloudinaryImage(f"avatar/{user.username}").build_url(
+                width=250, height=250, crop="fill", version=r.get("version")
+            )
+        user.avatar = src_url
         try:
             await db.commit()
+            await db.refresh(user)
             return user
         except Exception as e:
             await db.rollback()
@@ -116,3 +117,20 @@ async def change_password(user: User, password: str, db: AsyncSession) -> User:
     except Exception as e:
         await db.rollback()
         raise e
+
+async def get_user_username(username: str, db: AsyncSession) -> User | None:
+    """
+    The get_user_username function takes in a username and an AsyncSession object.
+    It then queries the database for a user with that username, returning the User object if it exists, or None otherwise.
+    
+    :param username: str: Specify the username of the user we want to retrieve
+    :param db: AsyncSession: Pass the database session into the function
+    :return: The user object if the username exists in the database, else none
+    """
+    
+    try:
+        result = await db.execute(select(User).filter(User.username == username))
+        user = result.scalar_one_or_none()
+        return user
+    except NoResultFound:
+        return None

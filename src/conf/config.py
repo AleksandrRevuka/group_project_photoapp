@@ -1,4 +1,5 @@
 import redis.asyncio
+import cloudinary
 from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings
@@ -12,6 +13,16 @@ async def init_async_redis():
         db=0,
         encoding="utf-8",
     )
+    
+
+def  init_cloudinary():
+    return cloudinary.config(
+        cloud_name=settings.cloudinary_name,
+        api_key=settings.cloudinary_api_key,
+        api_secret=settings.cloudinary_api_secret,
+        secure=True,
+        )
+
     
 class Settings(BaseSettings):
     postgres_user: str = "postgres"
