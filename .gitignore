@@ -13,3 +13,4 @@ postgres-data/
 migrations
 env.txt
 alembic.ini
+pyproject.toml
