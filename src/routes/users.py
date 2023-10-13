@@ -22,6 +22,7 @@ async def read_users_me(current_user: User = Depends(auth_service.get_current_us
     :param current_user: User: Get the current user from the database
     :return: The current user object
     """
+
     key_to_clear = f"user:{current_user.email}"
     await redis_client.delete(key_to_clear)
     return current_user

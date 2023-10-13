@@ -14,4 +14,3 @@ migrations
 env.txt
 alembic.ini
 pyproject.toml
-.venv_photoapp
