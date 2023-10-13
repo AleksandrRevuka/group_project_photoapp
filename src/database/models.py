@@ -12,8 +12,9 @@ class Base(DeclarativeBase):
     Base class for SQLAlchemy models.
     """
 
-    pass
-
+class BaseWithTimestamps(DeclarativeBase):
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
 
 class Role(enum.Enum):
     """
@@ -30,7 +31,7 @@ class Role(enum.Enum):
     user: str = "user"
 
 
-class User(Base):
+class User(Base, BaseWithTimestamps):
 
     __tablename__ = "users"
 
@@ -44,9 +45,6 @@ class User(Base):
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     roles: Mapped[Enum] = mapped_column("roles", Enum(Role), default=Role.user)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
-
 
 picture_tags = Table(
     'picture_tags', 
@@ -55,21 +53,11 @@ picture_tags = Table(
     Column('tag_id', Integer, ForeignKey('tags.id'))
 )
 
-# picture_comments = Table(
-#     "picture_comments",
-#     Base.metadata,
-#     Column('picture_id', Integer, ForeignKey("pictures.id")),
-#     Column("user_id", Integer, ForeignKey("users.id"))
-# )
-
-class Tag(Base):
+class Tag(Base, BaseWithTimestamps):
     __tablename__ = "tags"
     id: Mapped[int] = mapped_column(primary_key=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
-
-class Comment(Base):
+class Comment(Base, BaseWithTimestamps):
     __tablename__ = "comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -77,10 +65,7 @@ class Comment(Base):
     user: Mapped[relationship("User", back_populates="comments")] = relationship("User", back_populates="comments")
     picture_id: Mapped[int] = mapped_column(ForeignKey("pictures.id"))
     picture: Mapped[list["Picture"]] = relationship("Picture", back_populates="comments")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
-
-class Picture(Base):
+class Picture(Base, BaseWithTimestamps):
     __tablename__ = "pictures"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
@@ -90,5 +75,3 @@ class Picture(Base):
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     tags = Mapped[relationship("Tag", secondary=picture_tags, backref="pictures")]
     comments = Mapped[relationship("Comment", backref="pictures")]
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())
