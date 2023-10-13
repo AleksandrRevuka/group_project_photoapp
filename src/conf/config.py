@@ -1,6 +1,9 @@
 import redis.asyncio
+from dotenv import load_dotenv
 
 from pydantic_settings import BaseSettings
+
+load_dotenv()
 
 async def init_async_redis():
     return redis.asyncio.Redis(
@@ -42,3 +45,7 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_domain}:{self.postgres_port}/{self.postgres_db}"
 
 settings = Settings()  # type: ignore
+
+
+if __name__ == '__main__':
+    print(settings.sqlalchemy_database_url)

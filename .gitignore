@@ -9,4 +9,7 @@ postgres-data/
 .coverage
 .vscode
 .pytest_cache
+.idea
+migrations
 env.txt
+alembic.ini
