@@ -45,7 +45,6 @@ class User(Base, BaseWithTimestamps):
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     roles: Mapped[Enum] = mapped_column("roles", Enum(Role), default=Role.user)
 
-
 picture_tags = Table(
     'picture_tags', 
     Base.metadata,
@@ -63,17 +62,13 @@ class Comment(Base, BaseWithTimestamps):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String(200), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    user: Mapped[relationship("User", back_populates="comments")] = relationship("User", back_populates="comments")
     picture_id: Mapped[int] = mapped_column(ForeignKey("pictures.id"))
-    picture: Mapped[list["Picture"]] = relationship("Picture", back_populates="comments")
 
 class Picture(Base, BaseWithTimestamps):
     __tablename__ = "pictures"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    user: Mapped[relationship("User", back_populates="pictures")] = relationship("User", back_populates="pictures")
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
-    tags = Mapped[relationship("Tag", secondary=picture_tags, backref="pictures")]
-    comments = Mapped[relationship("Comment", backref="pictures")]
+    picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
+    create_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    tags: Mapped[List["Tag"]] = relationship("Tag", secondary=picture_tags, backref="pictures")
