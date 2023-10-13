@@ -1,0 +1,17 @@
+/.pre-commit-config.yaml
+/.venv
+/poetry.lock
+__pycache__/
+.env
+postgres-data/
+.ruff_cache
+.mypy_cache
+.coverage
+.vscode
+.pytest_cache
+.idea
+migrations
+env.txt
+alembic.ini
+pyproject.toml
+.venv_photoapp
