@@ -8,7 +8,6 @@ packages = [{include = "group_project_photoapp"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-sqlalchemy = "2.0.19"
 fastapi = "0.103.1"
 uvicorn = {version = "0.23.2", extras = ["standard"]}
 jinja2 = "3.1.2"
@@ -25,6 +24,7 @@ asyncpg = "0.28.0"
 python-multipart = "0.0.6"
 psycopg2-binary = "2.9.7"
 psycopg2 = "^2.9.9"
+sqlalchemy = "^2.0.22"
 alembic = "^1.12.0"
 
 
