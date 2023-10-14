@@ -28,3 +28,7 @@ class RoleAccess:
         """
         if current_user.roles not in self.allowed_roles:
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Operations forbidden")
+
+admin_moderator_user = RoleAccess([Role.admin, Role.moderator, Role.user])
+admin_moderator = RoleAccess([Role.admin, Role.moderator])
+admin = RoleAccess([Role.admin])

@@ -5,10 +5,11 @@ from redis.asyncio import Redis
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.database.models import User
+from src.database.models import User, Role
 from src.repository import users as repository_users
 from src.schemas.user import UserDb, UserResponse
 from src.services.auth import auth_service
+from src.services.roles import admin
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -35,6 +36,19 @@ async def edit_my_profile(
     current_user: User = Depends(auth_service.get_current_user), 
     db: AsyncSession = Depends(get_db)
 ) -> dict:
+    """
+    The edit_my_profile function allows a user to edit their profile.
+        The function takes in the following parameters:
+            name (str): The new username of the user.
+            file (UploadFile): An optional parameter that allows a user to upload an image for their profile picture. 
+                If no image is uploaded, then the default avatar will be used instead. 
+    
+    :param name: str: Get the name of the user from the request body
+    :param file: UploadFile: Upload a file to the server
+    :param current_user: User: Get the current user
+    :param db: AsyncSession: Get the database session
+    :return: A dictionary with the user and detail keys
+    """
     user_exist = await repository_users.get_user_username(name, db)
     
     if user_exist:
@@ -42,5 +56,32 @@ async def edit_my_profile(
      
     user = await repository_users.edit_my_profile(current_user.email, file, name, db)
     
-    
     return {"user": user, "detail": "My profile was successfully edited"}
+
+
+@router.get("/all_users",
+            dependencies=[Depends(admin)],
+            response_model=list[UserDb])
+async def all_users(
+    skip: int = 0,
+    limit: int = 10,
+    current_user: User = Depends(auth_service.get_current_user),
+    redis_client: Redis = Depends(init_async_redis),
+    db: AsyncSession = Depends(get_db)
+) -> list:
+    """
+    The all_users function returns a list of all users in the database.
+    
+    :param skip: int: Skip a number of users in the database
+    :param limit: int: Limit the number of users returned
+    :param current_user: User: Get the current user
+    :param redis_client: Redis: Pass in the redis client object
+    :param db: AsyncSession: Create a database connection
+    :return: A list of user objects
+    """
+    key_to_clear = f"user:{current_user.email}"
+    await redis_client.delete(key_to_clear)
+    
+    users = await repository_users.get_all_users(skip, limit, db)
+    return users  
+

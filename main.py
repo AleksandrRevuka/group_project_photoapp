@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import auth, users, tags
+from src.routes import auth, users, comments, tags
 
 logger = logging.getLogger("uvicorn")
 
@@ -19,7 +19,8 @@ app = FastAPI()
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
-
+app.include_router(comments.router, prefix="/api")
+app.include_router(tags.router, prefix="/api")
 
 @app.on_event("startup")
 async def startup() -> FastAPILimiter:
@@ -75,7 +76,7 @@ async def healthchecker(db: AsyncSession = Depends(get_db)) -> dict:
         raise HTTPException(status_code=500, detail="Error connecting to the database")
 
 
-app.include_router(tags.router, prefix="/api")
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
