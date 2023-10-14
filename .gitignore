@@ -15,3 +15,4 @@ env.txt
 alembic.ini
 pyproject.toml
 .venv_photoapp
+src/conf/config.py

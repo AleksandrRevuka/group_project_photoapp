@@ -78,6 +78,21 @@ async def confirmed_email(email: str, db: AsyncSession) -> None:
 
 
 async def edit_my_profile(email: str, file: UploadFile, name: str, db: AsyncSession) -> User | None:
+    """
+    The edit_my_profile function takes in an email, a file, and a name.
+    It then gets the user by their email from the database. If there is no user with that email, it returns None.
+    If there is a user with that given email address, it sets their username to be equal to the name parameter if one was 
+    provided.
+    Then it initializes cloudinary and uploads the file using cloudinary's uploader module (which uses Cloudinary's API). 
+    The public_id of this image will be &quot;avatar/{user's username}&quot;. This means that all images uploaded for each 
+    individual avatar will have unique
+    
+    :param email: str: Get the user from the database
+    :param file: UploadFile: Upload the file to cloudinary
+    :param name: str: Change the username of the user
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A user object if the user exists and none otherwise
+    """
     user = await get_user_by_email(email, db)
     if user:
         if name:
@@ -134,3 +149,19 @@ async def get_user_username(username: str, db: AsyncSession) -> User | None:
         return user
     except NoResultFound:
         return None
+    
+    
+async def get_all_users(skip:int, limit: int, db: AsyncSession) -> list[User]:
+    """
+    The get_all_users function returns a list of all users in the database.
+        
+    
+    :param skip:int: Skip the first n users in the database
+    :param limit: int: Limit the number of results returned
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A list of user objects
+    """
+    query = select(User).offset(skip).limit(limit)
+    users = await db.execute(query)
+    result = users.scalars().all()
+    return list(result)
