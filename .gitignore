@@ -14,3 +14,5 @@ migrations
 env.txt
 alembic.ini
 pyproject.toml
+/src/conf/config.py
+migrations/env.py

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import auth, users
+from src.routes import auth, users, comments
 
 logger = logging.getLogger("uvicorn")
 
@@ -19,6 +19,7 @@ app = FastAPI()
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
+app.include_router(comments.router, prefix="/api")
 
 
 @app.on_event("startup")
