@@ -1,3 +1,4 @@
+
 import cloudinary.uploader
 from libgravatar import Gravatar
 from sqlalchemy import select
@@ -132,6 +133,7 @@ async def change_password(user: User, password: str, db: AsyncSession) -> User:
     except Exception as e:
         await db.rollback()
         raise e
+
 
 async def get_user_username(username: str, db: AsyncSession) -> User | None:
     """
