@@ -42,6 +42,7 @@ async def update_tag(tag_id: int, body: TagModel, db: AsyncSession = Depends(get
         if exist_tag is None:
             updated_tag = await repository_tags.update_tag(tag_id, body, db)
             return updated_tag  
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="tagname already exist")
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
 
