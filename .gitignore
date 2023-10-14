@@ -14,5 +14,5 @@ migrations
 env.txt
 alembic.ini
 pyproject.toml
-.venv_photoapp
-src/conf/config.py
+/src/conf/config.py
+migrations/env.py

@@ -1,8 +1,10 @@
 import enum
+
 from datetime import datetime
 from typing import List
 
 from sqlalchemy import DateTime, Enum, String, func, Table, Integer, Column, Boolean
+
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql.schema import ForeignKey
 
@@ -33,6 +35,7 @@ class Role(enum.Enum):
     admin: str = "admin"
     moderator: str = "moderator"
     user: str = "user"
+
 
 picture_tags = Table(
     'picture_tags', 
