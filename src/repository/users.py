@@ -1,13 +1,13 @@
 
 import cloudinary.uploader
 from libgravatar import Gravatar
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 from fastapi import UploadFile
 
-from src.database.models import User
-from src.schemas.user import UserModel
+from src.database.models import User, Comment, Picture
+from src.schemas.user import UserModel, UserProfile
 from src.conf.config import init_cloudinary
 
 
@@ -167,3 +167,41 @@ async def get_all_users(skip:int, limit: int, db: AsyncSession) -> list[User]:
     users = await db.execute(query)
     result = users.scalars().all()
     return list(result)
+
+async def  get_user_profile(user: User, db: AsyncSession):
+    """
+    The get_user_profile function takes a user object and an async database session as arguments.
+    It then returns a UserProfile object with the following attributes:
+        id, roles, username, email, avatar (url), is_active (boolean), pictures_count (int), comments_count(int)
+        created_at(datetime.datetime), updated_at(datetime.datetime)
+    
+    :param user: User: Pass the user object to the function
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A userprofile object
+    """
+    
+    if user:
+        
+        pictures = select(func.count()).where(Picture.user_id == user.id)
+        pictures_result = await db.execute(pictures)
+        pictures_count = pictures_result.scalar()
+
+        comments = select(func.count()).where(Comment.user_id == user.id)
+        comments_result = await db.execute(comments)
+        comments_count = comments_result.scalar()
+        
+        user_profile = UserProfile(
+            id=user.id,
+            roles=user.roles,
+            username=user.username,
+            email=user.email,
+            avatar=user.avatar,
+            is_active=user.is_active,
+            pictures_count=pictures_count,
+            comments_count=comments_count,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            confirmed=user.confirmed
+        )
+        return user_profile
+    return None

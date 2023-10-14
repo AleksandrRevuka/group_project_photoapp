@@ -55,7 +55,7 @@ class User(Base, BaseWithTimestamps):
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     refresh_token: Mapped[str] = mapped_column(String(255), nullable=True)
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
-    roles: Mapped[Enum] = mapped_column("roles", Enum(Role), default=Role.user)
+    roles: Mapped[Role] = mapped_column("roles", Enum(Role), default=Role.user)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     pictures: Mapped[list["Picture"]] = relationship("Picture", back_populates="user", cascade="all, delete-orphan")

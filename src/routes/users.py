@@ -7,9 +7,9 @@ from src.conf.config import init_async_redis
 from src.database.db import get_db
 from src.database.models import User, Role
 from src.repository import users as repository_users
-from src.schemas.user import UserDb, UserResponse
+from src.schemas.user import UserDb, UserResponse, UserProfile
 from src.services.auth import auth_service
-from src.services.roles import admin
+from src.services.roles import admin, admin_moderator
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -85,3 +85,26 @@ async def all_users(
     users = await repository_users.get_all_users(skip, limit, db)
     return users  
 
+@router.get("/{username}",
+            dependencies=[Depends(admin_moderator)],
+            response_model=UserProfile)
+async def user_profile(
+    username: str,
+    current_user: User = Depends(auth_service.get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    The user_profile function returns the user profile of a given username.
+    
+    :param username: str: Get the username of the user we want to update
+    :param current_user: User: Get the user that is currently logged in
+    :param db: AsyncSession: Get the database session
+    :param : Get the current user
+    :return: A user object
+    """
+    user_exist = await repository_users.get_user_username(username, db)
+    if user_exist:
+        user = await repository_users.get_user_profile(user_exist, db)
+        return user
+    else:
+        raise HTTPException(status_code=404, detail="User not found!")
