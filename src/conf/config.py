@@ -26,27 +26,18 @@ def init_cloudinary():
     )
 
 class Settings(BaseSettings):
-    postgres_user: str = 'postgres'
-    postgres_password: str = '567234'
-    postgres_db: str = 'postgres'
-    postgres_domain: str = 'localhost'
-    postgres_port: int = 5432
-
-    secret_key: str = '7bbb3508e2e129ae2a3eabafdc76f20dd3211ee5660409019f710e2ea3d99f7b'
-    algorithm: str = 'HS256'
-
-    mail_username: str = 'fastapi_kulyk@meta.ua'
-    mail_password: str = 'pythonCourse2023'
-    mail_from: str = 'fastapi_kulyk@meta.ua'
+    secret_key: str = "secret_key"
+    algorithm: str = "HS256"
+    mail_username: str = "example@meta.ua"
+    mail_password: str = "password"
+    mail_from: str = "example@meta.ua"
     mail_port: int = 465
-    mail_server: str = 'smtp.meta.ua'
-
-    redis_host: str = 'localhost'
+    mail_server: str = "smtp.meta.ua"
+    redis_host: str = "localhost"
     redis_port: int = 6379
-
-    cloudinary_name: str = 'drb36q0vc'
-    cloudinary_api_key: str = '681646296468926'
-    cloudinary_api_secret: str = 'SoAcTSjL6c1ec7JGnBNv7hqIJgY'
+    cloudinary_name: str = "name"
+    cloudinary_api_key: int = 681646296468926
+    cloudinary_api_secret: str = "secret"
 
     class ConfigDict:
         env_file = ".env"
