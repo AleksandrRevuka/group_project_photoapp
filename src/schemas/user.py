@@ -1,4 +1,6 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import Enum
 
 from src.database.models import Role
 
@@ -104,3 +106,19 @@ class ResetPassword(BaseModel):
 
     new_password: str
     confirm_password: str
+    
+class UserProfile(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    confirmed: bool
+    avatar: str
+    roles: Role
+    is_active: bool
+    pictures_count: int | None
+    comments_count: int | None
+    created_at: datetime
+    updated_at: datetime
+    
+    class ConfigDict:
+        from_attributes = True
