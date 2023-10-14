@@ -23,7 +23,6 @@ async def get_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
     return tag
 
-    
 @router.post('', response_model=TagResponse, status_code=status.HTTP_201_CREATED)
 async def create_tag(body: TagModel, db: AsyncSession = Depends(get_db)):
     exist_tag = await repository_tags.get_tag_by_tagname(tagname=str(body.tagname), db=db)

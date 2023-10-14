@@ -26,7 +26,7 @@ async def get_tag_by_tagname(tagname: str, db: AsyncSession):
 
 async def create_tag(body: TagModel, db: AsyncSession):
     async with db.begin():
-        tag = Tag(**body.dict())
+        tag = Tag(tagname=body.tagname)
         db.add(tag)
     await db.commit()
     await db.refresh(tag)
