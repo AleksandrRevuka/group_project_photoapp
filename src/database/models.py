@@ -48,7 +48,7 @@ picture_tags = Table(
 class User(Base, BaseWithTimestamps):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -65,7 +65,7 @@ class User(Base, BaseWithTimestamps):
 class Tag(Base, BaseWithTimestamps):
     __tablename__ = "tags"
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     
     pictures: Mapped[List["Picture"]] = relationship("Picture", secondary=picture_tags, back_populates="tags")
@@ -74,7 +74,7 @@ class Tag(Base, BaseWithTimestamps):
 class Comment(Base, BaseWithTimestamps):
     __tablename__ = "comments"
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     text: Mapped[str] = mapped_column(String(200), nullable=False)
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id"), nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
@@ -86,7 +86,7 @@ class Comment(Base, BaseWithTimestamps):
 class Picture(Base, BaseWithTimestamps):
     __tablename__ = "pictures"
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
