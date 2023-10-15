@@ -9,7 +9,7 @@ ENTRYPOINT [ "poetry", "run", "python", "./main.py"]
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-#COPY poetry.lock pyproject.toml /
+COPY .env .
 COPY . .
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi
+    poetry install --no-interaction --no-ansi --without dev,test
