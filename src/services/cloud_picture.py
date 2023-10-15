@@ -7,7 +7,7 @@ import cloudinary.api
 from src.conf.config import settings
 
 
-class CloudImage:
+class CloudPicture:
     cloudinary.config(
         cloud_name=settings.cloudinary_name,
         api_key=settings.cloudinary_api_key,
@@ -21,12 +21,12 @@ class CloudImage:
         return folder_name
 
     @staticmethod
-    def upload_image(file, public_id: str):
+    def upload_picture(file, public_id: str):
         r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
         return r
 
     @staticmethod
-    def get_url_for_image(public_id, r):
+    def get_url_for_picture(public_id, r):
         src_url = cloudinary.CloudinaryImage(public_id).build_url(width=350, height=350, crop='fill',
                                                                   version=r.get('version'))
         return src_url
