@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.database.models import User
-from src.schemas.photos import PhotoUpload
-from src.services.claud_image import CloudImage
+from src.schemas.photos import PhotoUpload, PhotoDb
+from src.services.cloud_image import CloudImage
 from src.services.roles import admin_moderator_user
 from src.repository import photos as repository_photos
 from src.services.auth import auth_service
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 
 @router.post(
     "/",
+    response_model=PhotoDb,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
