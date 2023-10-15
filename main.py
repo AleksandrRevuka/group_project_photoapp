@@ -22,6 +22,7 @@ app.include_router(users.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(tags.router, prefix="/api")
 
+
 @app.on_event("startup")
 async def startup() -> FastAPILimiter:
     """
