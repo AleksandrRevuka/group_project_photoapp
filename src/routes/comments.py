@@ -93,9 +93,9 @@ async def delete_comment(
     description="User, Moderator and Administrator have access",
 )
 async def get_comments_to_foto(
+    picture_id: int,
     skip: int = 0,
     limit: int = 10,
-    picture_id: int = Picture.id,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -129,9 +129,9 @@ async def get_comments_to_foto(
     description="User, Moderator and Administrator have access",
 )
 async def get_comments_of_user(
+    user_id: int,
     skip: int = 0,
     limit: int = 10,
-    user_id: int = User.id,
     db: AsyncSession = Depends(get_db),
 ):
     """
