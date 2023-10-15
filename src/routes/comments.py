@@ -3,15 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.schemas.comments import CommentCreate, CommentUpdate
-from src.database.models import Role, Picture, User
-from src.services.roles import RoleAccess
+from src.database.models import Picture, User
+from src.services.roles import admin_moderator_user, admin_moderator
 from src.repository import comments as repository_comments
 
-
-allowed_operation_get = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_create = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_update = RoleAccess([Role.admin, Role.moderator, Role.user])
-allowed_operation_remove = RoleAccess([Role.admin, Role.moderator])
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
@@ -19,7 +14,7 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(allowed_operation_get)],
+    dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def create_comment(
@@ -45,7 +40,7 @@ async def create_comment(
 
 @router.put(
     "/{body.comment_id}",
-    dependencies=[Depends(allowed_operation_get)],
+    dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def update_comment(
@@ -71,7 +66,7 @@ async def update_comment(
 
 @router.delete(
     "/{comment_id}",
-    dependencies=[Depends(allowed_operation_remove)],
+    dependencies=[Depends(admin_moderator)],
     description="Moderator and Administrator have access",
 )
 async def delete_comment(
@@ -94,13 +89,13 @@ async def delete_comment(
 
 @router.get(
     "/{picture_id}",
-    dependencies=[Depends(allowed_operation_get)],
-    description="User, moderator and admin",
+    dependencies=[Depends(admin_moderator_user)],
+    description="User, Moderator and Administrator have access",
 )
 async def get_comments_to_foto(
+    picture_id: int,
     skip: int = 0,
     limit: int = 10,
-    picture_id: int = Picture.id,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -130,13 +125,13 @@ async def get_comments_to_foto(
 
 @router.get(
     "/{user_id}",
-    dependencies=[Depends(allowed_operation_get)],
-    description="User, moderator and admin",
+    dependencies=[Depends(admin_moderator_user)],
+    description="User, Moderator and Administrator have access",
 )
 async def get_comments_of_user(
+    user_id: int,
     skip: int = 0,
     limit: int = 10,
-    user_id: int = User.id,
     db: AsyncSession = Depends(get_db),
 ):
     """
