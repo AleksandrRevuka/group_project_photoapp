@@ -25,10 +25,8 @@ class PictureResponse(BaseModel):
 
 
 class PictureNameUpdate(BaseModel):
-    id: int
     name: str  # photo's name
 
 
 class PictureDescrUpdate(BaseModel):
-    id: int
     description: str  # photo's name

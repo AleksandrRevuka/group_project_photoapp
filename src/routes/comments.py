@@ -42,19 +42,24 @@ async def create_comment(
     description="User, Moderator and Administrator have access",
 )
 async def update_comment(
+    comment_id: int,
     body: CommentUpdate,
     db: AsyncSession = Depends(get_db),
 ):
     """
     The update_comment function updates a comment in the database.
+        It takes an id of the comment to be updated, and a body containing
+        all fields that are to be updated.
 
+    :param comment_id: int: Specify the id of the comment to be updated
     :param body: CommentUpdate: Pass the data from the request body to the function
-    :param db: AsyncSession: Pass the database session to the repository
-    :param : Get the comment id
-    :return: A comment object
+    :param db: AsyncSession: Get the database session
+    :param : Get the comment id from the url
+    :return: A comment
+    :doc-author: Trelent
     """
 
-    comment = await repository_comments.update_comment(body, db)
+    comment = await repository_comments.update_comment(comment_id, body, db)
     if comment is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created"
