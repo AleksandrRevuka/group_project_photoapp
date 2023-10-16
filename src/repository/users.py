@@ -205,3 +205,17 @@ async def  get_user_profile(user: User, db: AsyncSession):
         )
         return user_profile
     return None
+
+async def ban_user(email, db: AsyncSession) -> User | None:
+    user = await get_user_by_email(email, db)
+    if user:
+        user.is_active = False
+   
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except Exception as e:
+            await db.rollback()
+            raise e
+    return None

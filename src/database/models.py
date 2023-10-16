@@ -59,7 +59,7 @@ class User(Base, BaseWithTimestamps):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     pictures: Mapped[list["Picture"]] = relationship("Picture", back_populates="user", cascade="all, delete-orphan")
-    comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+    comments_user: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
 
 
 class Tag(Base, BaseWithTimestamps):
@@ -68,7 +68,7 @@ class Tag(Base, BaseWithTimestamps):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     
-    pictures: Mapped[List["Picture"]] = relationship("Picture", secondary=picture_tags, back_populates="tags")
+    pictures_teg: Mapped[List["Picture"]] = relationship("Picture", secondary=picture_tags, back_populates="tags_picture")
 
 
 class Comment(Base, BaseWithTimestamps):
@@ -79,8 +79,8 @@ class Comment(Base, BaseWithTimestamps):
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id"), nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     
-    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments")
-    user: Mapped[int] = relationship("User", back_populates="comments")
+    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture")
+    user: Mapped[int] = relationship("User", back_populates="comments_user")
 
 
 class Picture(Base, BaseWithTimestamps):
@@ -93,5 +93,5 @@ class Picture(Base, BaseWithTimestamps):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="pictures")
-    comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete-orphan")
-    tags: Mapped[List["Tag"]] = relationship("Tag", secondary=picture_tags, back_populates="pictures")
+    comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete-orphan")
+    tags_picture: Mapped[List["Tag"]] = relationship("Tag", secondary=picture_tags, back_populates="pictures_teg")

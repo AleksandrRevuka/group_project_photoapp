@@ -55,7 +55,7 @@ class UserResponse(BaseModel):
     """
 
     user: UserDb
-    detail: str = "User successfully created"
+    detail: str = "User"
 
 
 class MessageResponse(BaseModel):

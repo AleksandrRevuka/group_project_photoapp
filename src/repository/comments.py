@@ -59,7 +59,7 @@ async def update_comment(body: CommentUpdate, db: AsyncSession) -> Comment:
     return comment
 
 
-async def delete_comment(comment_id: int, db: AsyncSession) -> None:
+async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
     """
     The delete_comment function deletes a comment from the database.
 
@@ -78,6 +78,7 @@ async def delete_comment(comment_id: int, db: AsyncSession) -> None:
     try:
         await db.delete(comment)
         await db.commit()
+        return comment
     except Exception as error:
         await db.rollback()
         raise error
@@ -100,10 +101,9 @@ async def get_comments_to_foto(
     :return: A list of comments
     """
 
-    comments_alias = aliased(Comment)
     query = (
-        select(comments_alias.text)
-        .where(comments_alias.picture_id == picture_id)
+        select(Comment)
+        .where(Comment.picture_id == picture_id)
         .offset(skip)
         .limit(limit)
     )
@@ -124,11 +124,9 @@ async def get_comments_of_user(
     :param db: AsyncSession: Pass the database session to the function
     :return: A list of comments
     """
-
-    comments_alias = aliased(Comment)
     query = (
-        select(comments_alias.text)
-        .where(comments_alias.user_id == user_id)
+        select(Comment)
+        .where(Comment.user_id == user_id)
         .offset(skip)
         .limit(limit)
     )

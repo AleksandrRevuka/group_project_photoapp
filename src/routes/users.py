@@ -108,3 +108,22 @@ async def user_profile(
         return user
     else:
         raise HTTPException(status_code=404, detail="User not found!")
+    
+    
+@router.patch("/ban_user",
+            dependencies=[Depends(admin_moderator)],
+            response_model=UserResponse)
+async def ban_user(
+    username: str,
+    current_user: User = Depends(auth_service.get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    user_banned = await repository_users.get_user_username(username, db)
+    if user_banned:
+        if user_banned.username == current_user.username:
+            return {"user":user_banned, "detail": "You can't ban yourself"}
+        else:
+            user = await repository_users.ban_user(user_banned.email, db)
+            return {"user": user, "detail": f"The user {user_banned.username} has been banned"}
+    else:
+        raise HTTPException(status_code=404, detail="User not found!")
