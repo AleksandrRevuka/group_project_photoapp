@@ -58,27 +58,28 @@ async def upload_picture_to_cloudinary(
     }
 
 
-@router.put(
-    "/{body.picture_id}",
+@router.patch(
+    "/picture/{picture_id}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def update_name_of_picture(
+    id: int,
     body: PictureNameUpdate,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    The update_name_of_picture function updates the name of a picture.
-        The function takes in a PictureNameUpdate object, which contains the id of the picture to be updated and its new name.
-        It then uses this information to update the database with an UPDATE query.
+    The update_name_of_picture function updates the name of a picture in the database.
+        The function takes an id and body as input, and returns an updated picture object.
 
+    :param id: int: Get the id of the picture that we want to update
     :param body: PictureNameUpdate: Get the new name of the picture from the request body
-    :param db: AsyncSession: Get the database session
-    :param : Get the picture id from the url
-    :return: An updated picture name
+    :param db: AsyncSession: Pass a database session to the function
+    :param : Get the id of the picture to be updated
+    :return: The updated picture name
     """
 
-    updated_name = await repository_pictures.update_picture_name(body, db)
+    updated_name = await repository_pictures.update_picture_name(id, body, db)
     if updated_name is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Comment has been not updated"
@@ -86,26 +87,30 @@ async def update_name_of_picture(
     return updated_name
 
 
-@router.put(
-    "/{body.description}",
+@router.patch(
+    "/description/{description}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def update_description_of_picture(
+    id: int,
     body: PictureDescrUpdate,
     db: AsyncSession = Depends(get_db),
 ):
     """
     The update_description_of_picture function updates the description of a picture.
-        The function takes in a PictureDescrUpdate object and returns an updated Picture object.
+        The function takes in an id and body, which is a PictureDescrUpdate object.
+        It then uses the repository_pictures module to update the description of that picture in our database.
 
-    :param body: PictureDescrUpdate: Get the data from the request body
+
+    :param id: int: Identify the picture to update
+    :param body: PictureDescrUpdate: Pass the new description of a picture
     :param db: AsyncSession: Get the database session
-    :param : Get the picture id
-    :return: The updated description of the picture
-    :doc-author: Trelent
+    :param : Get the id of the picture
+    :return: A picturedescrupdate object
     """
-    updated_descr = await repository_pictures.update_picture_description(body, db)
+
+    updated_descr = await repository_pictures.update_picture_description(id, body, db)
     if updated_descr is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

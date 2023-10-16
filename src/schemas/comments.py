@@ -8,5 +8,4 @@ class CommentCreate(BaseModel):
 
 
 class CommentUpdate(BaseModel):
-    comment_id: int
     text: str

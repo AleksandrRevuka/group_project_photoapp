@@ -2,9 +2,8 @@ from typing import Any, Sequence
 
 from sqlalchemy import select, Row, RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
 
-from src.database.models import Comment, User
+from src.database.models import Comment
 from src.schemas.comments import CommentCreate, CommentUpdate
 from fastapi import HTTPException, status
 
@@ -29,16 +28,17 @@ async def create_comment(
     return new_comment
 
 
-async def update_comment(body: CommentUpdate, db: AsyncSession) -> Comment:
+async def update_comment(comment_id: int, body: CommentUpdate, db: AsyncSession) -> Comment:
     """
     The update_comment function updates a comment in the database.
 
-    :param body: CommentUpdate: Pass the data from the request body to the function
-    :param db: AsyncSession: Access the database
-    :return: The updated comment object
+    :param comment_id: int: Specify the comment that will be updated
+    :param body: CommentUpdate: Pass the data to update a comment
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A comment object
     """
 
-    comment_query = select(Comment).where(Comment.id == body.comment_id)
+    comment_query = select(Comment).where(Comment.id == comment_id)
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
@@ -124,6 +124,7 @@ async def get_comments_of_user(
     :param db: AsyncSession: Pass the database session to the function
     :return: A list of comments
     """
+
     query = (
         select(Comment)
         .where(Comment.user_id == user_id)
