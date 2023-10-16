@@ -137,6 +137,17 @@ async def activate_user(
     current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    """
+    The activate_user function is used to activate a user.
+        The function takes in the username of the user to be activated and returns a dictionary containing
+        the details of that user and an appropriate message.
+    
+    :param username: str: Get the username of the user to be deactivated
+    :param current_user: User: Get the current user
+    :param db: AsyncSession: Get the database connection
+    :param : Get the current user
+    :return: The user and a detail message
+    """
     user_activate = await repository_users.get_user_username(username, db)
     if user_activate:
         user = await repository_users.activate_user(user_activate.email, db)
