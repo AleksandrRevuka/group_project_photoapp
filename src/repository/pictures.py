@@ -100,3 +100,4 @@ async def update_picture_description(
     await db.commit()
     await db.refresh(picture_descr)
     return picture_descr
+
