@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models import Picture, User
 from src.schemas.pictures import PictureNameUpdate, PictureDescrUpdate
@@ -32,7 +34,9 @@ async def save_data_of_picture_to_db(
     return picture_datas
 
 
-async def update_picture_name(id: int, body: PictureNameUpdate, db: AsyncSession) -> Picture:
+async def update_picture_name(
+    id: int, body: PictureNameUpdate, db: AsyncSession
+) -> Picture:
     """
     The update_picture_name function updates the name of a picture in the database.
         Args:
@@ -103,3 +107,63 @@ async def update_picture_description(
     await db.refresh(picture_descr)
     return picture_descr
 
+
+async def get_all_pictures(
+    skip: int, limit: int, db: AsyncSession
+) -> Sequence[Picture]:
+    """
+    The get_all_pictures function returns a list of all pictures in the database.
+        ---
+        get:
+          summary: Get all pictures from the database.
+          description: Returns a list of all pictures in the database, with optional pagination parameters.
+
+    :param skip: int: Skip a certain amount of pictures
+    :param limit: int: Limit the number of pictures that are returned
+    :param db: AsyncSession: Pass the database session into the function
+    :return: A list of picture objects
+    """
+
+    query = select(Picture).offset(skip).limit(limit)
+    pictures = await db.execute(query)
+    result = pictures.scalars().all()
+    return result
+
+
+async def get_picture_by_id(id: int, db: AsyncSession) -> Sequence[Picture]:
+    """
+    The get_picture_by_id function takes in an id and a database session,
+        and returns the picture with that id.
+
+    :param id: int: Specify the id of the picture we want to get from the database
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A list of pictures with the given id
+    """
+
+    query = select(Picture).where(Picture.id == id)
+    picture = await db.execute(query)
+    result = picture.scalars().all()
+    return result
+
+
+async def get_all_pictures_of_user(
+    user_id: int, skip: int, limit: int, db: AsyncSession
+) -> Sequence[Picture]:
+    """
+    The get_all_pictures_of_user function returns a list of all pictures that belong to the user with the given id.
+    The function takes in three arguments:
+        - user_id: The id of the user whose pictures we want to retrieve.
+        - skip: The number of records we want to skip before returning results (useful for pagination).
+        - limit: The maximum number of records we want returned (useful for pagination).
+
+    :param user_id: int: Identify the user
+    :param skip: int: Skip a certain amount of pictures
+    :param limit: int: Limit the number of pictures returned
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A list of pictures
+    """
+
+    query = select(Picture).where(Picture.user_id == user_id).offset(skip).limit(limit)
+    pictures = await db.execute(query)
+    result = pictures.scalars().all()
+    return result

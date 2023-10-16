@@ -117,3 +117,92 @@ async def update_description_of_picture(
             detail="Description has been not updated",
         )
     return updated_descr
+
+
+@router.get(
+    "/picture/all_pictures",
+    dependencies=[Depends(admin_moderator_user)],
+    description="User, Moderator and Administrator have access",
+)
+async def get_all_pictures(
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    The get_all_pictures function returns a list of all pictures in the database.
+    The skip and limit parameters are used to paginate the results.
+
+    :param skip: int: Skip a number of pictures from the database
+    :param limit: int: Limit the number of pictures returned
+    :param db: AsyncSession: Get the database session
+    :param : Get the picture by id
+    :return: A list of pictures
+    """
+
+    pictures = await repository_pictures.get_all_pictures(skip, limit, db)
+    if not pictures:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pictures not found"
+        )
+    return pictures
+
+
+@router.get(
+    "/picture/{id}",
+    dependencies=[Depends(admin_moderator_user)],
+    description="User, Moderator and Administrator have access",
+)
+async def get_picture_by_id(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    The get_picture_by_id function returns a picture by its id.
+        If the picture does not exist, it raises an HTTP 404 error.
+
+    :param id: int: Specify the id of the picture to be returned
+    :param db: AsyncSession: Pass the database connection to the function
+    :param : Get the picture by id
+    :return: A single picture
+    """
+
+    pictures = await repository_pictures.get_picture_by_id(id, db)
+    if not pictures:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found"
+        )
+    return pictures
+
+
+@router.get(
+    "/all_pictures/{user_id}",
+    dependencies=[Depends(admin_moderator_user)],
+    description="User, Moderator and Administrator have access",
+)
+async def get_all_pictures_of_user(
+    user_id: int,
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    The get_all_pictures_of_user function returns all pictures of a user.
+
+    :param user_id: int: Get all the pictures of a specific user
+    :param skip: int: Skip the first n pictures
+    :param limit: int: Limit the number of pictures returned
+    :param db: AsyncSession: Pass the database session to the repository layer
+    :param : Get the user id of the user that is logged in
+    :return: A list of pictures
+    """
+
+    pictures = await repository_pictures.get_all_pictures_of_user(
+        user_id, skip, limit, db
+    )
+    if not pictures:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pictures of this user not found",
+        )
+    return pictures
