@@ -219,3 +219,28 @@ async def ban_user(email, db: AsyncSession) -> User | None:
             await db.rollback()
             raise e
     return None
+
+
+async def activate_user(email, db: AsyncSession) -> User | None:
+    """
+    The activate_user function takes an email and a database session as arguments.
+    It then queries the database for a user with that email address, and if it finds one, 
+    it sets its is_active attribute to True. It then commits the change to the database 
+    and returns the updated user object.
+    
+    :param email: Find the user in the database
+    :param db: AsyncSession: Pass in the database session so that we can use it to query the database
+    :return: A user or none
+    """
+    user = await get_user_by_email(email, db)
+    if user:
+        user.is_active = True
+   
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except Exception as e:
+            await db.rollback()
+            raise e
+    return None

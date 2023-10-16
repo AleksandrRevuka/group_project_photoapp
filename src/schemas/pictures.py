@@ -12,12 +12,11 @@ class PydanticFile(BaseModel):
 
 
 class PictureDB(BaseModel):
+    id: int
     name: str  # photo's name
     description: str
     picture_url: str
-
-    class ConfigDict:
-        from_attributes = True
+    user_id: int
 
 
 class PictureResponse(BaseModel):
