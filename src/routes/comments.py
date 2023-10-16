@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.schemas.comments import CommentCreate, CommentUpdate
-from src.database.models import Picture, User
 from src.services.roles import admin_moderator_user, admin_moderator
 from src.repository import comments as repository_comments
 
@@ -13,7 +12,6 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 
 @router.post(
     "/",
-    status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
@@ -38,8 +36,8 @@ async def create_comment(
     return comment
 
 
-@router.put(
-    "/{body.comment_id}",
+@router.patch(
+    "/{comment_id}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
@@ -66,10 +64,11 @@ async def update_comment(
 
 @router.delete(
     "/{comment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(admin_moderator)],
     description="Moderator and Administrator have access",
 )
-async def delete_comment(
+async def remove_comment(
     comment_id: int,
     db: AsyncSession = Depends(get_db),
 ):
@@ -85,14 +84,15 @@ async def delete_comment(
     :return: A 204 status code
     """
     comment = await repository_comments.delete_comment(comment_id, db)
+    return comment
 
 
 @router.get(
-    "/{picture_id}",
+    "/picture/{picture_id}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
-async def get_comments_to_foto(
+async def comments_to_foto(
     picture_id: int,
     skip: int = 0,
     limit: int = 10,
@@ -124,11 +124,11 @@ async def get_comments_to_foto(
 
 
 @router.get(
-    "/{user_id}",
+    "/user/{user_id}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
-async def get_comments_of_user(
+async def comments_of_user(
     user_id: int,
     skip: int = 0,
     limit: int = 10,
@@ -144,7 +144,6 @@ async def get_comments_of_user(
     :param db: AsyncSession: Get the database session
     :param : Get the comments of a specific user
     :return: A list of comments
-    :doc-author: Trelent
     """
 
     comments = await repository_comments.get_comments_of_user(skip, limit, user_id, db)
