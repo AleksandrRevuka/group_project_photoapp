@@ -40,8 +40,8 @@ class Role(enum.Enum):
 picture_tags = Table(
     'picture_tags', 
     Base.metadata,
-    Column('picture_id', Integer, ForeignKey('pictures.id')),
-    Column('tag_id', Integer, ForeignKey('tags.id'))
+    Column('picture_id', Integer, ForeignKey('pictures.id', ondelete="CASCADE")),
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete="CASCADE"))
 )
 
 
@@ -58,8 +58,8 @@ class User(Base, BaseWithTimestamps):
     roles: Mapped[Role] = mapped_column("roles", Enum(Role), default=Role.user)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    pictures: Mapped[list["Picture"]] = relationship("Picture", back_populates="user", cascade="all, delete-orphan")
-    comments_user: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+    pictures: Mapped[list["Picture"]] = relationship("Picture", back_populates="user", cascade="all, delete")
+    comments_user: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", cascade="all, delete")
 
 
 class Tag(Base, BaseWithTimestamps):
@@ -68,7 +68,8 @@ class Tag(Base, BaseWithTimestamps):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     
-    pictures_teg: Mapped[List["Picture"]] = relationship("Picture", secondary=picture_tags, back_populates="tags_picture")
+    pictures_teg: Mapped[List["Picture"]] = relationship(
+        "Picture", secondary=picture_tags, back_populates="tags_picture", passive_deletes=True,)
 
 
 class Comment(Base, BaseWithTimestamps):
@@ -76,11 +77,11 @@ class Comment(Base, BaseWithTimestamps):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String(200), nullable=False)
-    picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id"), nullable=False)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     
-    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture")
-    user: Mapped[int] = relationship("User", back_populates="comments_user")
+    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture", cascade="all, delete")
+    user: Mapped[int] = relationship("User", back_populates="comments_user", cascade="all, delete")
 
 
 class Picture(Base, BaseWithTimestamps):
@@ -90,8 +91,9 @@ class Picture(Base, BaseWithTimestamps):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="pictures")
-    comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete-orphan")
-    tags_picture: Mapped[List["Tag"]] = relationship("Tag", secondary=picture_tags, back_populates="pictures_teg")
+    comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete")
+    tags_picture: Mapped[List["Tag"]] = relationship(
+        "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete")
