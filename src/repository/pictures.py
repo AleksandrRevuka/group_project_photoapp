@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.database.models import Picture, User
+from src.database.models import Picture, User, Role
 from src.schemas.pictures import PictureNameUpdate, PictureDescrUpdate
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -172,23 +172,27 @@ async def get_all_pictures_of_user(
 
 async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
     """
-    The remove_picture function removes a picture from the database.
-        It takes in a picture_id and current_user, which are used to find the correct picture to remove.
-        The function returns None if no such user exists or if the user is not authorized to delete this image.
+    The remove_picture function is used to remove a picture from the database.
+    It takes in a picture_id and current_user as parameters, and returns the removed 
+    picture if successful. If not successful, it returns None.
     
-    :param picture_id: int: Find the picture in the database
-    :param current_user: User: Check if the user is allowed to delete the picture
+    :param picture_id: int: Identify the picture to be removed
+    :param current_user: User: Check if the user is an admin or not
     :param db: AsyncSession: Pass the database session to the function
-    :return: A picture object
+    :return: The picture that was deleted, if it exists
     """
-    query = select(Picture).where(Picture.id == picture_id, Picture.user_id == current_user.id)
+
+    query = select(Picture).where(Picture.id == picture_id)
     picture = await db.execute(query)
-    result =  picture.scalars().first()
+    result = picture.scalars().first()
 
     if result is None:
-        return result
+        return None
     
-    await db.delete(result)
-    await db.commit()  
 
-    return result
+    if current_user.roles == Role.admin or result.user_id == current_user.id:
+        await db.delete(result)
+        await db.commit()
+        return result
+    else:
+        return None
