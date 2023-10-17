@@ -3,7 +3,6 @@ import logging
 import click
 import redis.asyncio as redis_async
 import uvicorn
-
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi_limiter import FastAPILimiter
 from sqlalchemy import text
@@ -11,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import auth, users, comments, tags, pictures
+from src.routes import auth, comments, pictures, tags, users
 
 logger = logging.getLogger("uvicorn")
 
@@ -22,7 +21,6 @@ app.include_router(users.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 app.include_router(tags.router, prefix="/api")
 app.include_router(pictures.router, prefix="/api")
-
 
 
 @app.on_event("startup")
@@ -79,7 +77,5 @@ async def healthchecker(db: AsyncSession = Depends(get_db)) -> dict:
         raise HTTPException(status_code=500, detail="Error connecting to the database")
 
 
-
-
 if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True, host='0.0.0.0')
+    uvicorn.run("main:app", reload=True, host="0.0.0.0")

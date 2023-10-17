@@ -8,7 +8,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.conf.config import settings, init_async_redis
+from src.conf.config import init_async_redis, settings
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
@@ -19,13 +19,12 @@ class Auth:
     SECRET_KEY = settings.secret_key
     ALGORITHM = settings.algorithm
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-    
+
     def __init__(self):
         self._redis_cache = None
-    
+
     @property
     async def redis_cache(self):
-
         if self._redis_cache is None:
             self._redis_cache = await init_async_redis()
         return self._redis_cache
@@ -132,7 +131,7 @@ class Auth:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
         user_banned = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="The user is on the ban list")
 
         try:
@@ -146,9 +145,8 @@ class Auth:
                 raise credentials_exception
         except JWTError:
             raise credentials_exception
-        
-        invalid_token = await repository_users.is_validate_token(token, db)
-        if invalid_token:
+
+        if await self.validate_token(token) or await repository_users.is_validate_token(token, db):
             raise credentials_exception
 
         user_r = await (await self.redis_cache).get(f"user:{email}")
@@ -156,19 +154,30 @@ class Auth:
             user = await repository_users.get_user_by_email(email, db)
             if user is None:
                 raise credentials_exception
-            
+
             if not user.is_active:
                 raise user_banned
-            
+
             user_r = pickle.dumps(user)
             await (await self.redis_cache).set(f"user:{email}", user_r)
             await (await self.redis_cache).expire(f"user:{email}", 900)
-            
+
         user_clean: User = pickle.loads(user_r)
         if not user_clean.is_active:
             raise user_banned
 
         return user_clean
+
+    async def validate_token(self, token: str) -> bool:
+        """
+        Validate the given token by checking if it's in the invalid tokens cache.
+
+        :param token: Token to validate
+        :return: True if the token is valid, False otherwise
+        """
+        invalid_access_token = await (await self.redis_cache).get(f"access_token:{token}")
+        invalid_refresh_token = await (await self.redis_cache).get(f"refresh_token:{token}")
+        return invalid_access_token or invalid_refresh_token
 
     def get_email_from_token(self, token: str) -> str:
         """

@@ -1,9 +1,10 @@
-from fastapi import (APIRouter, BackgroundTasks, Depends, HTTPException, Header,
-                     Request, Security, status)
-from fastapi.security import (HTTPAuthorizationCredentials, HTTPBearer,
-                              OAuth2PasswordRequestForm)
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.conf.config import init_async_redis
+from src.conf.constant import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
@@ -32,22 +33,22 @@ async def signup(
     :return: A dict with the user and a detail message
     """
     exist_user_username = await repository_users.get_user_username(body.username, db)
-    
+
     if exist_user_username:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with this username already exists")
 
     exist_user_email = await repository_users.get_user_by_email(body.email, db)
-    
+
     if exist_user_email:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Account already exists")
-    
+
     body.password = auth_service.get_password_hash(body.password)
     new_user = await repository_users.create_user(body, db)
-    
+
     subject = "Confirm your email! "
     template = "email_template.html"
     background_tasks.add_task(send_email, new_user.email, new_user.username, str(request.base_url), subject, template)
-    
+
     return {"user": new_user, "detail": "User successfully created. Check your email for confirmation."}
 
 
@@ -64,13 +65,13 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
     user: User | None = await repository_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email")
-    
+
     if not user.confirmed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email not confirmed")
-    
+
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="The user is on the ban list")
-    
+
     if not auth_service.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password")
 
@@ -85,13 +86,24 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
 
 
 @router.post("/logout")
-async def user_logout(credentials: HTTPAuthorizationCredentials = Security(security),
-                db: AsyncSession = Depends(get_db)):
-    token = credentials.credentials
-    if not token:
+async def user_logout(
+    credentials: HTTPAuthorizationCredentials = Security(security),
+    current_user: User = Depends(auth_service.get_current_user),
+    redis_client: Redis = Depends(init_async_redis),
+    db: AsyncSession = Depends(get_db),
+):
+    access_token = credentials.credentials
+    refresh_token = current_user.refresh_token
+
+    if not access_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token not provided")
-    await repository_users.invalidate_token(token, db)
-    
+
+    await redis_client.set(f"access_token:{access_token}", "valid", ex=ACCESS_TOKEN_TTL)
+    await redis_client.set(f"refresh_token:{refresh_token}", "valid", ex=REFRESH_TOKEN_TTL)
+
+    await repository_users.invalidate_token(access_token, db)
+    await repository_users.invalidate_token(refresh_token, db)
+
     return {"message": "Token revoked"}
 
 
