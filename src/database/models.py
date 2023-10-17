@@ -1,19 +1,20 @@
 import enum
-
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
-from sqlalchemy import DateTime, Enum, String, func, Table, Integer, Column, Boolean
-
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Table, event, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql.schema import ForeignKey
+
+from src.conf.constant import REFRESH_TOKEN_TTL
 
 
 class Base(DeclarativeBase):
     """
     Base class for SQLAlchemy models.
-    
+
     """
+
     pass
 
 
@@ -38,10 +39,10 @@ class Role(enum.Enum):
 
 
 picture_tags = Table(
-    'picture_tags', 
+    "picture_tags",
     Base.metadata,
-    Column('picture_id', Integer, ForeignKey('pictures.id', ondelete="CASCADE")),
-    Column('tag_id', Integer, ForeignKey('tags.id', ondelete="CASCADE"))
+    Column("picture_id", Integer, ForeignKey("pictures.id", ondelete="CASCADE")),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE")),
 )
 
 
@@ -64,29 +65,33 @@ class User(Base, BaseWithTimestamps):
 
 class Tag(Base, BaseWithTimestamps):
     __tablename__ = "tags"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
-    
+
     pictures_teg: Mapped[List["Picture"]] = relationship(
-        "Picture", secondary=picture_tags, back_populates="tags_picture", passive_deletes=True,)
+        "Picture",
+        secondary=picture_tags,
+        back_populates="tags_picture",
+        passive_deletes=True,
+    )
 
 
 class Comment(Base, BaseWithTimestamps):
     __tablename__ = "comments"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String(200), nullable=False)
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    
+
     picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture", cascade="all, delete")
     user: Mapped[int] = relationship("User", back_populates="comments_user", cascade="all, delete")
 
 
 class Picture(Base, BaseWithTimestamps):
     __tablename__ = "pictures"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -96,10 +101,19 @@ class Picture(Base, BaseWithTimestamps):
     user: Mapped["User"] = relationship("User", back_populates="pictures")
     comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete")
     tags_picture: Mapped[List["Tag"]] = relationship(
-        "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete")
+        "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete"
+    )
+
 
 class InvalidToken(Base, BaseWithTimestamps):
     __tablename__ = "invalid_tokens"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     token: Mapped[str] = mapped_column(String(250), nullable=False)
+
+
+@event.listens_for(InvalidToken, "after_insert")
+def check_and_delete_old_tokens(mapper, connection, target):
+    seven_days_ago = datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL)
+
+    connection.execute(InvalidToken.__table__.delete().where(InvalidToken.created_at < seven_days_ago))

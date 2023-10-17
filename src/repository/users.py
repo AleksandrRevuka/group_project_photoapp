@@ -1,14 +1,13 @@
-
 import cloudinary.uploader
+from fastapi import UploadFile
 from libgravatar import Gravatar
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
-from fastapi import UploadFile
 
-from src.database.models import User, Comment, Picture, InvalidToken
-from src.schemas.user import UserModel, UserProfile
 from src.conf.config import init_cloudinary
+from src.database.models import Comment, InvalidToken, Picture, Role, User
+from src.schemas.user import UserModel, UserProfile
 
 
 async def get_user_by_email(email: str, db: AsyncSession) -> User | None:
@@ -41,14 +40,14 @@ async def create_user(body: UserModel, db: AsyncSession) -> User:
     """
     g = Gravatar(body.email)
     avatar = g.get_image()
-    
+
     existing_user = (await db.execute(select(User).limit(1))).scalar()
-    
+
     if existing_user is None:
         new_user = User(**body.model_dump(), avatar=avatar, roles="admin")
     else:
         new_user = User(**body.model_dump(), avatar=avatar)
-        
+
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
@@ -89,12 +88,12 @@ async def edit_my_profile(email: str, file: UploadFile, name: str, db: AsyncSess
     """
     The edit_my_profile function takes in an email, a file, and a name.
     It then gets the user by their email from the database. If there is no user with that email, it returns None.
-    If there is a user with that given email address, it sets their username to be equal to the name parameter if one was 
+    If there is a user with that given email address, it sets their username to be equal to the name parameter if one was
     provided.
-    Then it initializes cloudinary and uploads the file using cloudinary's uploader module (which uses Cloudinary's API). 
-    The public_id of this image will be &quot;avatar/{user's username}&quot;. This means that all images uploaded for each 
+    Then it initializes cloudinary and uploads the file using cloudinary's uploader module (which uses Cloudinary's API).
+    The public_id of this image will be &quot;avatar/{user's username}&quot;. This means that all images uploaded for each
     individual avatar will have unique
-    
+
     :param email: str: Get the user from the database
     :param file: UploadFile: Upload the file to cloudinary
     :param name: str: Change the username of the user
@@ -108,8 +107,8 @@ async def edit_my_profile(email: str, file: UploadFile, name: str, db: AsyncSess
         init_cloudinary()
         r = cloudinary.uploader.upload(file.file, public_id=f"avatar/{user.username}", overwrite=True)
         src_url = cloudinary.CloudinaryImage(f"avatar/{user.username}").build_url(
-                width=250, height=250, crop="fill", version=r.get("version")
-            )
+            width=250, height=250, crop="fill", version=r.get("version")
+        )
         user.avatar = src_url
         try:
             await db.commit()
@@ -146,25 +145,25 @@ async def get_user_username(username: str, db: AsyncSession) -> User | None:
     """
     The get_user_username function takes in a username and an AsyncSession object.
     It then queries the database for a user with that username, returning the User object if it exists, or None otherwise.
-    
+
     :param username: str: Specify the username of the user we want to retrieve
     :param db: AsyncSession: Pass the database session into the function
     :return: The user object if the username exists in the database, else none
     """
-    
+
     try:
         result = await db.execute(select(User).filter(User.username == username))
         user = result.scalar_one_or_none()
         return user
     except NoResultFound:
         return None
-    
-    
-async def get_all_users(skip:int, limit: int, db: AsyncSession) -> list[User]:
+
+
+async def get_all_users(skip: int, limit: int, db: AsyncSession) -> list[User]:
     """
     The get_all_users function returns a list of all users in the database.
-        
-    
+
+
     :param skip:int: Skip the first n users in the database
     :param limit: int: Limit the number of results returned
     :param db: AsyncSession: Pass the database session to the function
@@ -175,20 +174,20 @@ async def get_all_users(skip:int, limit: int, db: AsyncSession) -> list[User]:
     result = users.scalars().all()
     return list(result)
 
-async def  get_user_profile(user: User, db: AsyncSession):
+
+async def get_user_profile(user: User, db: AsyncSession):
     """
     The get_user_profile function takes a user object and an async database session as arguments.
     It then returns a UserProfile object with the following attributes:
         id, roles, username, email, avatar (url), is_active (boolean), pictures_count (int), comments_count(int)
         created_at(datetime.datetime), updated_at(datetime.datetime)
-    
+
     :param user: User: Pass the user object to the function
     :param db: AsyncSession: Pass the database session to the function
     :return: A userprofile object
     """
-    
+
     if user:
-        
         pictures = select(func.count()).where(Picture.user_id == user.id)
         pictures_result = await db.execute(pictures)
         pictures_count = pictures_result.scalar()
@@ -196,7 +195,7 @@ async def  get_user_profile(user: User, db: AsyncSession):
         comments = select(func.count()).where(Comment.user_id == user.id)
         comments_result = await db.execute(comments)
         comments_count = comments_result.scalar()
-        
+
         user_profile = UserProfile(
             id=user.id,
             roles=user.roles,
@@ -208,16 +207,17 @@ async def  get_user_profile(user: User, db: AsyncSession):
             comments_count=comments_count,
             created_at=user.created_at,
             updated_at=user.updated_at,
-            confirmed=user.confirmed
+            confirmed=user.confirmed,
         )
         return user_profile
     return None
+
 
 async def ban_user(email: str, db: AsyncSession) -> User | None:
     user = await get_user_by_email(email, db)
     if user:
         user.is_active = False
-   
+
         try:
             await db.commit()
             await db.refresh(user)
@@ -231,10 +231,10 @@ async def ban_user(email: str, db: AsyncSession) -> User | None:
 async def activate_user(email: str, db: AsyncSession) -> User | None:
     """
     The activate_user function takes an email and a database session as arguments.
-    It then queries the database for a user with that email address, and if it finds one, 
-    it sets its is_active attribute to True. It then commits the change to the database 
+    It then queries the database for a user with that email address, and if it finds one,
+    it sets its is_active attribute to True. It then commits the change to the database
     and returns the updated user object.
-    
+
     :param email: Find the user in the database
     :param db: AsyncSession: Pass in the database session so that we can use it to query the database
     :return: A user or none
@@ -242,7 +242,7 @@ async def activate_user(email: str, db: AsyncSession) -> User | None:
     user = await get_user_by_email(email, db)
     if user:
         user.is_active = True
-   
+
         try:
             await db.commit()
             await db.refresh(user)
@@ -253,14 +253,14 @@ async def activate_user(email: str, db: AsyncSession) -> User | None:
     return None
 
 
-async def invalidate_token(token: str, db: AsyncSession):
+async def invalidate_token(token: str, db: AsyncSession) -> None:
     """
     The invalidate_token function takes a token and an AsyncSession object as arguments.
     It creates an InvalidToken object with the given token, adds it to the database, commits
-    the changes to the database, and refreshes invalid_token. If any of these steps fail for 
-    any reason (e.g., if there is already a row in the invalid_tokens table with that token), 
+    the changes to the database, and refreshes invalid_token. If any of these steps fail for
+    any reason (e.g., if there is already a row in the invalid_tokens table with that token),
     then all of them are rolled back.
-    
+
     :param token: str: Specify the token that is to be invalidated
     :param db: AsyncSession: Pass the database session to the function
     :return: The invalid_token object
@@ -273,15 +273,15 @@ async def invalidate_token(token: str, db: AsyncSession):
     except Exception as e:
         await db.rollback()
         raise e
-    
-    
-async def is_validate_token(token: str, db: AsyncSession):
+
+
+async def is_validate_token(token: str, db: AsyncSession) -> bool:
     """
     The is_validate_token function checks if the token is valid or not.
         Args:
             token (str): The user's authentication token.
             db (AsyncSession): The database session object.
-    
+
     :param token: str: Check if the token is valid or not
     :param db: AsyncSession: Pass the database session to the function
     :return: True if the token is in the database
@@ -294,3 +294,27 @@ async def is_validate_token(token: str, db: AsyncSession):
     if invalid_token:
         return True
     return False
+
+
+async def change_role(email: str, role: Role, db: AsyncSession) -> User | None:
+    """
+    The change_role function takes in an email and a role, and changes the user's role to that of the given role.
+        If no user is found with that email, None is returned.
+
+    :param email: str: Get the user by email
+    :param role: Role: Specify the role of the user
+    :param db: AsyncSession: Pass in the database session to the function
+    :return: A user object or none
+    """
+    user = await get_user_by_email(email, db)
+    if user:
+        user.roles = role
+
+        try:
+            await db.commit()
+            await db.refresh(user)
+            return user
+        except Exception as e:
+            await db.rollback()
+            raise e
+    return None
