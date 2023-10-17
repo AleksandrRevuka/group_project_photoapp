@@ -132,6 +132,8 @@ class Auth:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+        user_banned = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="The user is on the ban list")
 
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
@@ -144,17 +146,29 @@ class Auth:
                 raise credentials_exception
         except JWTError:
             raise credentials_exception
+        
+        invalid_token = await repository_users.is_validate_token(token, db)
+        if invalid_token:
+            raise credentials_exception
 
         user_r = await (await self.redis_cache).get(f"user:{email}")
         if user_r is None:
             user = await repository_users.get_user_by_email(email, db)
             if user is None:
                 raise credentials_exception
+            
+            if not user.is_active:
+                raise user_banned
+            
             user_r = pickle.dumps(user)
             await (await self.redis_cache).set(f"user:{email}", user_r)
             await (await self.redis_cache).expire(f"user:{email}", 900)
+            
+        user_clean: User = pickle.loads(user_r)
+        if not user_clean.is_active:
+            raise user_banned
 
-        return pickle.loads(user_r)
+        return user_clean
 
     def get_email_from_token(self, token: str) -> str:
         """

@@ -116,8 +116,10 @@ async def user_profile(
 async def ban_user(
     username: str,
     current_user: User = Depends(auth_service.get_current_user),
+    redis_client: Redis = Depends(init_async_redis),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+
     user_banned = await repository_users.get_user_username(username, db)
     if user_banned:
         if user_banned.username == current_user.username:
