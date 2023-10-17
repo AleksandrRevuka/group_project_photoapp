@@ -211,7 +211,8 @@ async def get_all_pictures_of_user(
 
 @router.delete(
     "/all_pictures/{picture_id}",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(admin_moderator_user)]
 )
 async def delete_picture(
     picture_id: int, 

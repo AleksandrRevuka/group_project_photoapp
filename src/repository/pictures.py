@@ -181,14 +181,17 @@ async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
     :param db: AsyncSession: Pass the database session to the function
     :return: A picture object
     """
-    query = select(Picture).where(Picture.id == picture_id, Picture.user_id == current_user.id)
+
+    query = select(Picture).where(Picture.id == picture_id)
     picture = await db.execute(query)
-    result =  picture.scalars().first()
+    result = picture.scalars().first()
 
     if result is None:
-        return result
+        return None
     
-    await db.delete(result)
-    await db.commit()  
-
-    return result
+    if current_user.roles == 'admin' or result.user_id == current_user.id:
+        await db.delete(result)
+        await db.commit()
+        return result
+    else:
+        return None
