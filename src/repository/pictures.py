@@ -167,3 +167,28 @@ async def get_all_pictures_of_user(
     pictures = await db.execute(query)
     result = pictures.scalars().all()
     return result
+
+
+
+async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
+    """
+    The remove_picture function removes a picture from the database.
+        It takes in a picture_id and current_user, which are used to find the correct picture to remove.
+        The function returns None if no such user exists or if the user is not authorized to delete this image.
+    
+    :param picture_id: int: Find the picture in the database
+    :param current_user: User: Check if the user is allowed to delete the picture
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A picture object
+    """
+    query = select(Picture).where(Picture.id == picture_id, Picture.user_id == current_user.id)
+    picture = await db.execute(query)
+    result =  picture.scalars().first()
+
+    if result is None:
+        return result
+    
+    await db.delete(result)
+    await db.commit()  
+
+    return result
