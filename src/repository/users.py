@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 from fastapi import UploadFile
 
-from src.database.models import User, Comment, Picture
+from src.database.models import User, Comment, Picture, InvalidToken
 from src.schemas.user import UserModel, UserProfile
 from src.conf.config import init_cloudinary
 
@@ -41,7 +41,14 @@ async def create_user(body: UserModel, db: AsyncSession) -> User:
     """
     g = Gravatar(body.email)
     avatar = g.get_image()
-    new_user = User(**body.model_dump(), avatar=avatar)
+    
+    existing_user = (await db.execute(select(User).limit(1))).scalar()
+    
+    if existing_user is None:
+        new_user = User(**body.model_dump(), avatar=avatar, roles="admin")
+    else:
+        new_user = User(**body.model_dump(), avatar=avatar)
+        
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
@@ -206,7 +213,7 @@ async def  get_user_profile(user: User, db: AsyncSession):
         return user_profile
     return None
 
-async def ban_user(email, db: AsyncSession) -> User | None:
+async def ban_user(email: str, db: AsyncSession) -> User | None:
     user = await get_user_by_email(email, db)
     if user:
         user.is_active = False
@@ -221,7 +228,7 @@ async def ban_user(email, db: AsyncSession) -> User | None:
     return None
 
 
-async def activate_user(email, db: AsyncSession) -> User | None:
+async def activate_user(email: str, db: AsyncSession) -> User | None:
     """
     The activate_user function takes an email and a database session as arguments.
     It then queries the database for a user with that email address, and if it finds one, 
@@ -244,3 +251,46 @@ async def activate_user(email, db: AsyncSession) -> User | None:
             await db.rollback()
             raise e
     return None
+
+
+async def invalidate_token(token: str, db: AsyncSession):
+    """
+    The invalidate_token function takes a token and an AsyncSession object as arguments.
+    It creates an InvalidToken object with the given token, adds it to the database, commits
+    the changes to the database, and refreshes invalid_token. If any of these steps fail for 
+    any reason (e.g., if there is already a row in the invalid_tokens table with that token), 
+    then all of them are rolled back.
+    
+    :param token: str: Specify the token that is to be invalidated
+    :param db: AsyncSession: Pass the database session to the function
+    :return: The invalid_token object
+    """
+    invalid_token = InvalidToken(token=token)
+    try:
+        db.add(invalid_token)
+        await db.commit()
+        await db.refresh(invalid_token)
+    except Exception as e:
+        await db.rollback()
+        raise e
+    
+    
+async def is_validate_token(token: str, db: AsyncSession):
+    """
+    The is_validate_token function checks if the token is valid or not.
+        Args:
+            token (str): The user's authentication token.
+            db (AsyncSession): The database session object.
+    
+    :param token: str: Check if the token is valid or not
+    :param db: AsyncSession: Pass the database session to the function
+    :return: True if the token is in the database
+    """
+    qwery = select(InvalidToken).filter(InvalidToken.token == token)
+    result = await db.execute(qwery)
+
+    invalid_token = result.scalar_one_or_none()
+
+    if invalid_token:
+        return True
+    return False

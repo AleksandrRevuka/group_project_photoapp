@@ -97,3 +97,9 @@ class Picture(Base, BaseWithTimestamps):
     comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete")
     tags_picture: Mapped[List["Tag"]] = relationship(
         "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete")
+
+class InvalidToken(Base, BaseWithTimestamps):
+    __tablename__ = "invalid_tokens"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String(250), nullable=False)
