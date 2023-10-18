@@ -1,11 +1,10 @@
-import cloudinary.uploader
 from fastapi import UploadFile
 from libgravatar import Gravatar
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import NoResultFound
 
-from src.conf.config import init_cloudinary
+from src.services.cloud_picture import CloudPicture
 from src.database.models import Comment, InvalidToken, Picture, Role, User
 from src.schemas.user import UserModel, UserProfile
 
@@ -105,11 +104,11 @@ async def edit_my_profile(email: str, file: UploadFile, name: str, db: AsyncSess
         if name:
             user.username = name
         if file:
-            init_cloudinary()
-            r = cloudinary.uploader.upload(file.file, public_id=f"avatar/{user.username}", overwrite=True)
-            src_url = cloudinary.CloudinaryImage(f"avatar/{user.username}").build_url(
-                width=250, height=250, crop="fill", version=r.get("version")
-            )
+            init_cloudinary = CloudPicture()
+            public_id = init_cloudinary.generate_folder_name(user.username)
+            file_info = init_cloudinary.upload_picture(file.file, public_id)
+            src_url = init_cloudinary.get_url_for_picture(public_id, file_info)
+
             user.avatar = src_url
         try:
             await db.commit()
