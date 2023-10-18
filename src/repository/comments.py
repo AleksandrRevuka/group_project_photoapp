@@ -30,17 +30,21 @@ async def create_comment(
     return new_comment
 
 
-async def update_comment(comment_id: int, body: CommentUpdate, db: AsyncSession) -> Comment:
+async def update_comment(comment_id: int, body: CommentUpdate, current_user: int, db: AsyncSession) -> Comment:
     """
     The update_comment function updates a comment in the database.
+        It takes in an id of the comment to be updated, and a CommentUpdate object containing the new text for that comment.
+        The function then checks if there is an existing user with that id, and if so it updates their text field with
+        whatever was passed into CommentUpdate's text field. If no such user exists, it raises a 404 error.
 
-    :param comment_id: int: Specify the comment that will be updated
-    :param body: CommentUpdate: Pass the data to update a comment
+    :param comment_id: int: Get the comment id
+    :param body: CommentUpdate: Get the updated comment text from the request body
+    :param current_user: int: Get the user_id of the current user
     :param db: AsyncSession: Pass the database session to the function
-    :return: A comment object
+    :return: The updated comment
     """
 
-    comment_query = select(Comment).where(Comment.id == comment_id)
+    comment_query = select(Comment).where(Comment.id == comment_id, Comment.user_id == current_user)
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:

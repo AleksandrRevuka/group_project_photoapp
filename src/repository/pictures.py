@@ -25,20 +25,21 @@ async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, tag_
     return picture_data
 
 
-async def update_picture_name(id: int, body: PictureNameUpdate, db: AsyncSession) -> Picture:
+async def update_picture_name(id: int, body: PictureNameUpdate, current_user: int, db: AsyncSession) -> Picture:
     """
-    The update_picture_name function updates the name of a picture in the database.
+    The update_picture_name function updates the name of a picture.
         Args:
             id (int): The ID of the picture to update.
-            body (PictureNameUpdate): The new name for this picture.
+            body (PictureNameUpdate): The new name for the picture.
 
-    :param id: int: Get the id of the picture we want to update
-    :param body: PictureNameUpdate: Get the new name of picture
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A picture with a new name
+    :param id: int: Get the picture id
+    :param body: PictureNameUpdate: Update the name of a picture
+    :param current_user: int: Check if the user is authorized to delete a picture
+    :param db: AsyncSession: Access the database
+    :return: The updated picture name
     """
 
-    picture_query = select(Picture).where(Picture.id == id)
+    picture_query = select(Picture).where(Picture.id == id, Picture.user_id == current_user)
     existing_name = await db.execute(picture_query)
     picture_name = existing_name.scalar()
     if not picture_name:
@@ -58,20 +59,18 @@ async def update_picture_name(id: int, body: PictureNameUpdate, db: AsyncSession
     return picture_name
 
 
-async def update_picture_description(id: int, body: PictureDescrUpdate, db: AsyncSession) -> Picture:
+async def update_picture_description(id: int, body: PictureDescrUpdate, current_user: int, db: AsyncSession) -> Picture:
     """
     The update_picture_description function updates the description of a picture.
-        Args:
-            id (int): The ID of the picture to update.
-            body (PictureDescrUpdate): The updated description for the picture.
 
-    :param id: int: Specify the id of the picture whose description we want to update
-    :param body: PictureDescrUpdate: Get the new description of the picture
+    :param id: int: Get the id of a picture
+    :param body: PictureDescrUpdate: Get the new description of picture
+    :param current_user: int: Check that the user is authorized to make changes
     :param db: AsyncSession: Access the database
-    :return: A picture object
+    :return: The updated picture
     """
 
-    picture_query = select(Picture).where(Picture.id == id)
+    picture_query = select(Picture).where(Picture.id == id, Picture.user_id == current_user)
     existing_descr = await db.execute(picture_query)
     picture_descr = existing_descr.scalar()
     if not picture_descr:

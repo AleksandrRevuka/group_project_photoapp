@@ -5,6 +5,7 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
+from src.schemas.pictures import PictureTransform
 
 
 class CloudPicture:
@@ -29,18 +30,10 @@ class CloudPicture:
         return folder_name
 
     @staticmethod
-    def upload_picture(file, public_id: str):
-        """
-        The upload_picture function takes a file and public_id as arguments.
-            The function then uploads the file to Cloudinary using the public_id provided.
-            If no public_id is provided, one will be generated for you by Cloudinary.
+    def upload_picture(file, public_id: str, transformation: dict):
+        # ---------------НЕ ЗАБУТИ ДОКСТРІНГИ!------------------
 
-        :param file: Specify the file to be uploaded
-        :param public_id: str: Set the public id of the image
-        :return: A dictionary with the following keys:
-        """
-
-        r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True)
+        r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True, transformation=transformation)
         return r
 
     @staticmethod

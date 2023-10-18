@@ -46,22 +46,24 @@ async def create_comment(
 async def update_comment(
     comment_id: int,
     body: CommentUpdate,
+    current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     The update_comment function updates a comment in the database.
-        It takes an id of the comment to be updated, and a body containing
-        all fields that are to be updated.
+        The function takes an id of the comment to be updated, and a CommentUpdate object containing
+        the new values for each field. It then checks if there is already a comment with that id, and if so it updates it with
+        the new values from CommentUpdate. If not, it raises an HTTPException indicating that no such comment exists.
 
-    :param comment_id: int: Specify the id of the comment to be updated
-    :param body: CommentUpdate: Pass the data from the request body to the function
+    :param comment_id: int: Identify the comment that is being updated
+    :param body: CommentUpdate: Get the data from the request body
+    :param current_user: User: Get the current user from the auth_service
     :param db: AsyncSession: Get the database session
-    :param : Get the comment id from the url
-    :return: A comment
-    :doc-author: Trelent
+    :param : Get the comment id
+    :return: A comment object
     """
 
-    comment = await repository_comments.update_comment(comment_id, body, db)
+    comment = await repository_comments.update_comment(comment_id, body, current_user.id, db)
     if comment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created")
     return comment

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import File, UploadFile
 
 
@@ -45,3 +45,11 @@ class PictureNameUpdate(BaseModel):
 
 class PictureDescrUpdate(BaseModel):
     description: str  # photo's name
+
+
+class PictureTransform(BaseModel):
+    width: int = Field(ge=0, default=200)
+    height: int = Field(ge=0, default=200)
+    crop: str = "crop"  # 'crop'|'scale'|'fill'|'pad'|'thumb'|'fit'|'fill_pad'
+    gravity: str = "auto"  # 'auto'|'face'|'center'|'north'|'west'|'east'|'south'
+    angle: int = Field(ge=-360, le=360, default=0)
