@@ -5,6 +5,8 @@ from src.database.db import get_db
 from src.schemas.comments import CommentCreate, CommentUpdate
 from src.services.roles import admin_moderator_user, admin_moderator
 from src.repository import comments as repository_comments
+from src.services.auth import auth_service
+from src.database.models import User
 
 
 router = APIRouter(prefix="/comments", tags=["comments"])
@@ -16,7 +18,9 @@ router = APIRouter(prefix="/comments", tags=["comments"])
     description="User, Moderator and Administrator have access",
 )
 async def create_comment(
+    picture_id: int,
     body: CommentCreate,
+    current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -28,11 +32,9 @@ async def create_comment(
     :return: A comment object
     """
 
-    comment = await repository_comments.create_comment(body, db)
+    comment = await repository_comments.create_comment(body, picture_id, current_user.id, db)
     if comment is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created")
     return comment
 
 
@@ -61,9 +63,7 @@ async def update_comment(
 
     comment = await repository_comments.update_comment(comment_id, body, db)
     if comment is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created")
     return comment
 
 
@@ -97,34 +97,27 @@ async def remove_comment(
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
-async def comments_to_foto(
+async def comments_to_photo(
     picture_id: int,
     skip: int = 0,
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    The get_comments_to_foto function returns a list of comments to the foto.
-        ---
-        get:
-          summary: Get comments to foto.
-          description: Returns a list of comments to the foto.  The number of items returned can be limited by using the limit parameter, and you can specify which page you want by using skip parameter (default is 0). You must also specify picture_id in order for this function to work properly.  If no results are found, an HTTP 404 error will be raised with detail &quot;Comments not found&quot;.
+    The comments_to_photo function returns a list of comments to the photo with the given picture_id.
+    The skip and limit parameters are used for pagination, where skip is how many comments to skip and limit is how many
+    comments to return.
 
+    :param picture_id: int: Get the comments to a specific photo
     :param skip: int: Skip the first n comments
     :param limit: int: Limit the number of comments returned
-    :param picture_id: int: Get the comments to a specific picture
-    :param db: AsyncSession: Pass the database session to the function
-    :param : Get the id of a specific comment
-    :return: A list of comments to the photo
+    :param db: AsyncSession: Get the database session
+    :return: A list of comments to a photo
     """
 
-    comments = await repository_comments.get_comments_to_foto(
-        skip, limit, picture_id, db
-    )
+    comments = await repository_comments.get_comments_to_photo(skip, limit, picture_id, db)
     if not comments:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
     return comments
 
 
@@ -153,7 +146,5 @@ async def comments_of_user(
 
     comments = await repository_comments.get_comments_of_user(skip, limit, user_id, db)
     if not comments:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
     return comments

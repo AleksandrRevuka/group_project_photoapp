@@ -10,6 +10,8 @@ from fastapi import HTTPException, status
 
 async def create_comment(
     body: CommentCreate,
+    picture_id,
+    user_id,
     db: AsyncSession,
 ) -> Comment:
     """
@@ -21,7 +23,7 @@ async def create_comment(
     :return: A comment object
     """
 
-    new_comment = Comment(**body.model_dump())
+    new_comment = Comment(**body.model_dump(), picture_id=picture_id, user_id=user_id)
     db.add(new_comment)
     await db.commit()
     await db.refresh(new_comment)
@@ -42,16 +44,11 @@ async def update_comment(comment_id: int, body: CommentUpdate, db: AsyncSession)
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Comment is not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment is not found")
 
-    # Перевірка того, що коментар не порожній
     if body.text == "":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Comment can't be empty"
-        )
-    # Перезаписуємо коментар з новими даними
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Comment can't be empty")
+
     comment.text = body.text
     db.add(comment)
     await db.commit()
@@ -72,9 +69,7 @@ async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Comment is not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment is not found")
     try:
         await db.delete(comment)
         await db.commit()
@@ -84,11 +79,9 @@ async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
         raise error
 
 
-async def get_comments_to_foto(
-    skip: int, limit: int, picture_id: int, db: AsyncSession
-) -> Sequence[Row | RowMapping | Any]:
+async def get_comments_to_photo(skip: int, limit: int, picture_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
     """
-    The get_comments_to_foto function returns a list of comments to the picture with id = picture_id.
+    The get_comments_to_photo function returns a list of comments to the picture with id = picture_id.
     The function takes three arguments: skip, limit and picture_id.
     Skip is an integer that indicates how many comments should be skipped before returning the result.
     Limit is an integer that indicates how many comments should be returned in total (after skipping).
@@ -101,20 +94,13 @@ async def get_comments_to_foto(
     :return: A list of comments
     """
 
-    query = (
-        select(Comment)
-        .where(Comment.picture_id == picture_id)
-        .offset(skip)
-        .limit(limit)
-    )
+    query = select(Comment).where(Comment.picture_id == picture_id).offset(skip).limit(limit)
     comments = await db.execute(query)
     result = comments.scalars().all()
     return result
 
 
-async def get_comments_of_user(
-    skip: int, limit: int, user_id: int, db: AsyncSession
-) -> Sequence[Row | RowMapping | Any]:
+async def get_comments_of_user(skip: int, limit: int, user_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
     """
     The get_comments_of_user function returns a list of comments made by the user with the given id.
 
@@ -125,12 +111,7 @@ async def get_comments_of_user(
     :return: A list of comments
     """
 
-    query = (
-        select(Comment)
-        .where(Comment.user_id == user_id)
-        .offset(skip)
-        .limit(limit)
-    )
+    query = select(Comment).where(Comment.user_id == user_id).offset(skip).limit(limit)
     comments = await db.execute(query)
     result = comments.scalars().all()
     return result
