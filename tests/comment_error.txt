@@ -1,0 +1,53 @@
+(group-project-photoapp-py3.11) PS D:\Python\Python_13\group_project_photoapp> python -m unittest -f .\tests\test_repository_comments.py > .\tests\comment_error.txt
+.E
+======================================================================
+ERROR: test_update_comment (tests.test_repository_comments.TestNotes.test_update_comment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Program Files\Python311\Lib\unittest\async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\unittest\async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\asyncio\base_events.py", line 653, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "D:\Python\Python_13\group_project_photoapp\tests\test_repository_comments.py", line 28, in test_update_comment
+    result = await update_comment(comment_id=2, body=comment, db=self.session)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Python\Python_13\group_project_photoapp\src\repository\comments.py", line 55, in update_comment
+    comment.text = body.text
+    ^^^^^^^^^^^^
+AttributeError: 'coroutine' object has no attribute 'text'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.034s
+
+FAILED (errors=1)
+sys:1: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+Coroutine created at (most recent call last)
+  File "C:\Program Files\Python311\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Program Files\Python311\Lib\asyncio\base_events.py", line 640, in run_until_complete
+    self.run_forever()
+  File "C:\Program Files\Python311\Lib\asyncio\windows_events.py", line 321, in run_forever
+    super().run_forever()
+  File "C:\Program Files\Python311\Lib\asyncio\base_events.py", line 607, in run_forever
+    self._run_once()
+  File "C:\Program Files\Python311\Lib\asyncio\base_events.py", line 1914, in _run_once
+    handle._run()
+  File "C:\Program Files\Python311\Lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "D:\Python\Python_13\group_project_photoapp\tests\test_repository_comments.py", line 28, in test_update_comment
+    result = await update_comment(comment_id=2, body=comment, db=self.session)
+  File "D:\Python\Python_13\group_project_photoapp\src\repository\comments.py", line 43, in update_comment
+    comment = existing_comment.scalar()
+  File "C:\Program Files\Python311\Lib\unittest\mock.py", line 1118, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "C:\Program Files\Python311\Lib\unittest\mock.py", line 1122, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
