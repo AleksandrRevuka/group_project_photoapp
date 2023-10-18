@@ -2,9 +2,9 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-
 class TagModel(BaseModel):
     tagname: str
+
 
 class TagResponse(BaseModel):
     id: int
@@ -12,5 +12,5 @@ class TagResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
+    class ConfigDict:
         from_attributes = True
