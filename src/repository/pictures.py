@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.database.models import Picture, User, Tag
 from src.schemas.pictures import PictureNameUpdate, PictureDescrUpdate, PictureUpload
 from fastapi import HTTPException, status
@@ -145,3 +146,32 @@ async def get_all_pictures_of_user(user_id: int, skip: int, limit: int, db: Asyn
     pictures = await db.execute(query)
     result = pictures.scalars().all()
     return result
+
+
+
+async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
+    """
+    The remove_picture function is used to remove a picture from the database.
+    It takes in a picture_id and current_user as parameters, and returns the removed 
+    picture if successful. If not successful, it returns None.
+    
+    :param picture_id: int: Identify the picture to be removed
+    :param current_user: User: Check if the user is an admin or not
+    :param db: AsyncSession: Pass the database session to the function
+    :return: The picture that was deleted, if it exists
+    """
+
+    query = select(Picture).where(Picture.id == picture_id)
+    picture = await db.execute(query)
+    result = picture.scalars().first()
+
+    if result is None:
+        return None
+    
+
+    if current_user.roles == Role.admin or result.user_id == current_user.id:
+        await db.delete(result)
+        await db.commit()
+        return result
+    else:
+        return None

@@ -185,3 +185,31 @@ async def get_all_pictures_of_user(
             detail="Pictures of this user not found",
         )
     return pictures
+
+
+
+@router.delete(
+    "/all_pictures/{picture_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_picture(
+    picture_id: int, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user)
+):
+    """
+    The delete_picture function deletes a picture from the database.
+    
+    :param picture_id: int: Identify the picture to delete
+    :param db: AsyncSession: Pass the database session to the function
+    :param current_user: User: Get the current user from the database
+    :return: The deleted picture
+    :doc-author: Trelent
+    """
+    picture = await repository_pictures.remove_picture(picture_id, current_user, db)
+    
+    if picture is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+
+    return picture
+
