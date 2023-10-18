@@ -32,7 +32,7 @@ async def read_users_me(
 @router.patch("/edit_my_profile", response_model=UserResponse)
 async def edit_my_profile(
     name: str,
-    file: UploadFile = File(),
+    file: UploadFile = File(default=None),
     current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -131,6 +131,9 @@ async def ban_user(
 
         if user_banned.username == current_user.username:
             return {"user": user_banned, "detail": "You can't ban yourself"}
+        elif not user_banned.is_active:
+            return {"user": user_banned, "detail": "User has already been banned"}
+
         else:
             user = await repository_users.ban_user(user_banned.email, db)
             return {"user": user, "detail": f"The user {user_banned.username} has been banned"}

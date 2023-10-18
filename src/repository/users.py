@@ -104,12 +104,13 @@ async def edit_my_profile(email: str, file: UploadFile, name: str, db: AsyncSess
     if user:
         if name:
             user.username = name
-        init_cloudinary()
-        r = cloudinary.uploader.upload(file.file, public_id=f"avatar/{user.username}", overwrite=True)
-        src_url = cloudinary.CloudinaryImage(f"avatar/{user.username}").build_url(
-            width=250, height=250, crop="fill", version=r.get("version")
-        )
-        user.avatar = src_url
+        if file:
+            init_cloudinary()
+            r = cloudinary.uploader.upload(file.file, public_id=f"avatar/{user.username}", overwrite=True)
+            src_url = cloudinary.CloudinaryImage(f"avatar/{user.username}").build_url(
+                width=250, height=250, crop="fill", version=r.get("version")
+            )
+            user.avatar = src_url
         try:
             await db.commit()
             await db.refresh(user)
