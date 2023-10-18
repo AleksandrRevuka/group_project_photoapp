@@ -7,7 +7,7 @@ from src.schemas.pictures import (
     PictureUpload,
     PictureResponse,
     PictureNameUpdate,
-    PictureDescrUpdate,
+    PictureDescrUpdate, PictureTransform,
 )
 from src.services.cloud_picture import CloudPicture
 from src.services.roles import admin_moderator_user
@@ -28,10 +28,14 @@ async def upload_picture_to_cloudinary(
     body: PictureUpload = Depends(),
     file: UploadFile = File(...),
     current_user: User = Depends(auth_service.get_current_user),
+    transf: PictureTransform = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    # ---------------НЕ ЗАБУТИ ДОКСТРІНГИ!------------------
+
     public_id = CloudPicture.generate_folder_name(current_user.email)
-    r = CloudPicture.upload_picture(file.file, public_id)
+    transformation = {'height': transf.height, 'width': transf.width, 'crop': transf.crop, 'angle': transf.angle, 'gravity': transf.gravity}
+    r = CloudPicture.upload_picture(file.file, public_id, transformation)
     picture_url = CloudPicture.get_url_for_picture(public_id, r)
 
     tag_names = body.tags_picture[0].split(",")
@@ -53,20 +57,23 @@ async def upload_picture_to_cloudinary(
 async def update_name_of_picture(
     id: int,
     body: PictureNameUpdate,
+    current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    The update_name_of_picture function updates the name of a picture in the database.
-        The function takes an id and body as input, and returns an updated picture object.
+    The update_name_of_picture function updates the name of a picture.
+        The function takes in an id, body, current_user and db as parameters.
+        It then calls the update_picture_name function from repository/pictures.py to update the name of a picture.
 
-    :param id: int: Get the id of the picture that we want to update
+    :param id: int: Specify the id of the picture that we want to update
     :param body: PictureNameUpdate: Get the new name of the picture from the request body
-    :param db: AsyncSession: Pass a database session to the function
-    :param : Get the id of the picture to be updated
-    :return: The updated picture name
+    :param current_user: User: Get the current user from the database
+    :param db: AsyncSession: Get the database session
+    :param : Get the id of the picture that we want to update
+    :return: An updated name of the picture
     """
 
-    updated_name = await repository_pictures.update_picture_name(id, body, db)
+    updated_name = await repository_pictures.update_picture_name(id, body, current_user.id, db)
     if updated_name is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment has been not updated")
     return updated_name
@@ -80,22 +87,23 @@ async def update_name_of_picture(
 async def update_description_of_picture(
     id: int,
     body: PictureDescrUpdate,
+    current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
     The update_description_of_picture function updates the description of a picture.
-        The function takes in an id and body, which is a PictureDescrUpdate object.
-        It then uses the repository_pictures module to update the description of that picture in our database.
+        The function takes in an id, body and current_user as parameters.
+        It then calls the update_picture_description function from repository/pictures.py to update the description of a picture.
 
-
-    :param id: int: Identify the picture to update
-    :param body: PictureDescrUpdate: Pass the new description of a picture
+    :param id: int: Get the id of the picture that we want to update
+    :param body: PictureDescrUpdate: Pass the new description of the picture
+    :param current_user: User: Get the current user
     :param db: AsyncSession: Get the database session
-    :param : Get the id of the picture
-    :return: A picturedescrupdate object
+    :param : Get the id of the picture we want to update
+    :return: The updated_descr object
     """
 
-    updated_descr = await repository_pictures.update_picture_description(id, body, db)
+    updated_descr = await repository_pictures.update_picture_description(id, body, current_user.id, db)
     if updated_descr is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
