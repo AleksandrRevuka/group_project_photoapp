@@ -2,19 +2,27 @@ from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models import Picture, User, Tag
+from src.database.models import Picture, User, Tag, Role
 from src.schemas.pictures import PictureNameUpdate, PictureDescrUpdate, PictureUpload
 from fastapi import HTTPException, status
 from sqlalchemy import select
 
 
 async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, tag_names: list, user: User, db: AsyncSession):
-    tags = [Tag(tagname=tag_name) for tag_name in tag_names]
+    """
+    The save_data_of_picture_to_db function saves the data of a picture to the database.
 
-    for tag in tags:
-        db.add(tag)
-
-    await db.commit()
+    :param body: PictureUpload: Get the name and description of the picture
+    :param picture_url: str: Save the url of the picture in the database
+    :param tag_names: list: Get the list of tags that are associated with a picture
+    :param user: User: Get the user_id of the picture
+    :param db: AsyncSession: Make sure that the function is able to access the database
+    :return: A picture object
+    """
+    tags = []
+    for tag_name in tag_names:
+        tag = await get_or_create_tag(db, tag_name)
+        tags.append(tag)
 
     picture_data = Picture(
         name=body.name, description=body.description, picture_url=picture_url, user_id=user.id, tags_picture=tags
@@ -23,6 +31,28 @@ async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, tag_
     await db.commit()
     await db.refresh(picture_data)
     return picture_data
+
+
+async def get_or_create_tag(db: AsyncSession, tag_name: str) -> Tag:
+    """
+    The get_or_create_tag function takes a database session and a tag name as arguments.
+    It then queries the database for an existing tag with that name, returning it if found.
+    If no such tag exists, it creates one and returns that instead.
+
+    :param db: AsyncSession: Pass in the database connection
+    :param tag_name: str: Specify the name of the tag that we want to create or retrieve
+    :return: A tag object
+    """
+    query = select(Tag).where(Tag.tagname == tag_name)
+    existing_tag = await db.execute(query)
+    tag = existing_tag.scalar_one_or_none()
+
+    if not tag:
+        tag = Tag(tagname=tag_name)
+        db.add(tag)
+        await db.commit()
+
+    return tag
 
 
 async def update_picture_name(id: int, body: PictureNameUpdate, current_user: int, db: AsyncSession) -> Picture:
@@ -45,13 +75,12 @@ async def update_picture_name(id: int, body: PictureNameUpdate, current_user: in
     if not picture_name:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture is not found")
 
-    # Перевірка того, що коментар не порожній
     if body.name == "":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Name of picture can't be empty",
         )
-    # Перезаписуємо коментар з новими даними
+
     picture_name.name = body.name
     db.add(picture_name)
     await db.commit()
@@ -147,13 +176,12 @@ async def get_all_pictures_of_user(user_id: int, skip: int, limit: int, db: Asyn
     return result
 
 
-
 async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
     """
     The remove_picture function is used to remove a picture from the database.
-    It takes in a picture_id and current_user as parameters, and returns the removed 
+    It takes in a picture_id and current_user as parameters, and returns the removed
     picture if successful. If not successful, it returns None.
-    
+
     :param picture_id: int: Identify the picture to be removed
     :param current_user: User: Check if the user is an admin or not
     :param db: AsyncSession: Pass the database session to the function
@@ -166,7 +194,6 @@ async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
 
     if result is None:
         return None
-    
 
     if current_user.roles == Role.admin or result.user_id == current_user.id:
         await db.delete(result)

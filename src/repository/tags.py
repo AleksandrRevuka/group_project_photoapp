@@ -57,23 +57,6 @@ async def get_tag_by_tagname(tagname: str, db: AsyncSession):
         return result
 
 
-async def create_tag(body: TagModel, db: AsyncSession):
-    """
-    The create_tag function creates a new tag in the database.
-
-    :param body: TagModel: Pass the tagmodel object to the function
-    :param db: AsyncSession: Pass the database session into the function
-    :return: A tag object
-    :doc-author: Trelent
-    """
-    async with db.begin():
-        tag = Tag(tagname=body.tagname)
-        db.add(tag)
-    await db.commit()
-    await db.refresh(tag)
-    return tag
-
-
 async def update_tag(tag_id: int, body: TagModel, db: AsyncSession):
     """
     The update_tag function takes in a tag_id, body, and db.
