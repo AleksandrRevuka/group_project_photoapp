@@ -7,7 +7,8 @@ from src.schemas.pictures import (
     PictureUpload,
     PictureResponse,
     PictureNameUpdate,
-    PictureDescrUpdate, PictureTransform,
+    PictureDescrUpdate,
+    PictureTransform,
 )
 from src.services.cloud_picture import CloudPicture
 from src.services.roles import admin_moderator_user
@@ -26,21 +27,43 @@ router = APIRouter(prefix="/pictures", tags=["pictures"])
 )
 async def upload_picture_to_cloudinary(
     body: PictureUpload = Depends(),
+    transf: PictureTransform = Depends(),
     file: UploadFile = File(...),
     current_user: User = Depends(auth_service.get_current_user),
-    transf: PictureTransform = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    # ---------------НЕ ЗАБУТИ ДОКСТРІНГИ!------------------
+    """
+    The upload_picture_to_cloudinary function uploads a picture to the cloudinary server.
+        The function takes in a PictureUpload object, an UploadFile object, and a User object as parameters.
+        It also takes in two other objects: transf (a PictureTransform) and db (an AsyncSession).
+
+    :param body: PictureUpload: Get the data from the request body
+    :param file: UploadFile: Get the picture file from the request
+    :param current_user: User: Get the user who is currently logged in
+    :param transf: PictureTransform: Pass the transformation parameters to the function
+    :param db: AsyncSession: Get the database session
+    :param : Get the picture id
+    :return: A dictionary with the picture data and a detail message
+    """
 
     public_id = CloudPicture.generate_folder_name(current_user.email)
-    transformation = {'height': transf.height, 'width': transf.width, 'crop': transf.crop, 'angle': transf.angle, 'gravity': transf.gravity}
-    r = CloudPicture.upload_picture(file.file, public_id, transformation)
-    picture_url = CloudPicture.get_url_for_picture(public_id, r)
+    transformation = {
+        "height": transf.height,
+        "width": transf.width,
+        "crop": transf.crop,
+        "angle": transf.angle,
+        "gravity": transf.gravity,
+    }
+    info_file = CloudPicture.upload_picture(file.file, public_id, transformation)
+    picture_url = CloudPicture.get_url_for_picture(public_id, info_file)
 
-    tag_names = body.tags_picture[0].split(",")
+    tag_names = list(set(body.tags[0].split(",")))
     if len(tag_names) > 5:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The number of tags should not exceed 5")
+
+    for tag in tag_names:
+        if len(tag) > 25:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The length of tags should not exceed 25")
 
     picture_data = await repository_pictures.save_data_of_picture_to_db(body, picture_url, tag_names, current_user, db)
     return {
@@ -195,19 +218,13 @@ async def get_all_pictures_of_user(
     return pictures
 
 
-
-@router.delete(
-    "/all_pictures/{picture_id}",
-    status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/all_pictures/{picture_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_picture(
-    picture_id: int, 
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user)
+    picture_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(auth_service.get_current_user)
 ):
     """
     The delete_picture function deletes a picture from the database.
-    
+
     :param picture_id: int: Identify the picture to delete
     :param db: AsyncSession: Pass the database session to the function
     :param current_user: User: Get the current user from the database
@@ -215,7 +232,7 @@ async def delete_picture(
     :doc-author: Trelent
     """
     picture = await repository_pictures.remove_picture(picture_id, current_user, db)
-    
+
     if picture is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
 

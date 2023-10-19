@@ -11,7 +11,11 @@ from src.services.roles import admin_moderator
 router = APIRouter(prefix="/tags", tags=["tags"])
 
 
-@router.get("", response_model=List[TagResponse])
+@router.get(
+    "",
+    response_model=List[TagResponse],
+    dependencies=[Depends(admin_moderator)],
+)
 async def get_tags(db: AsyncSession = Depends(get_db)):
     """
     The get_tags function returns a list of all tags in the database.
@@ -19,9 +23,9 @@ async def get_tags(db: AsyncSession = Depends(get_db)):
         get:
             description: Get a list of all tags in the database.
             responses:  # A dictionary containing status codes and their corresponding responses. The keys are HTTP
-            status codes, and the values are dictionaries with two keys, &quot;description&quot; (a string) and &quot;
-            content&quot; (a dictionary). The content key's value is another dictionary that contains one key-value
-            pair for each media type supported by this endpoint; for example, {&quot;application/json&quot;: {...}}
+            status codes, and the values are dictionaries with two keys, "description" (a string) and "content"
+            (a dictionary). The content key's value is another dictionary that contains one key-value
+            pair for each media type supported by this endpoint; for example, {"application/json": {...}}
             would be used to describe JSON output.
 
     :param db: AsyncSession: Pass in the database session
@@ -31,7 +35,7 @@ async def get_tags(db: AsyncSession = Depends(get_db)):
     return tags
 
 
-@router.get("/{tag_id}", response_model=TagResponse)
+@router.get("/{tag_id}", dependencies=[Depends(admin_moderator)], response_model=TagResponse)
 async def get_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     """
     The get_tag function returns a tag object by its id.
@@ -46,26 +50,7 @@ async def get_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     return tag
 
 
-@router.post("", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
-async def create_tag(body: TagModel, db: AsyncSession = Depends(get_db)):
-    """
-    The create_tag function creates a new tag in the database.
-        It takes a TagModel object as input and returns the created tag.
-
-
-    :param body: TagModel: Get the data from the request body
-    :param db: AsyncSession: Pass the database connection to the function
-    :return: A tagmodel object
-    :doc-author: Trelent
-    """
-    exist_tag = await repository_tags.get_tag_by_tagname(tagname=str(body.tagname), db=db)
-    if exist_tag:
-        return exist_tag
-    tag = await repository_tags.create_tag(body, db)
-    return tag
-
-
-@router.patch("/{tag_id}", response_model=TagResponse)
+@router.patch("/{tag_id}", dependencies=[Depends(admin_moderator)], response_model=TagResponse)
 async def update_tag(tag_id: int, body: TagModel, db: AsyncSession = Depends(get_db)):
     """
     The update_tag function updates a tag in the database.
@@ -90,7 +75,7 @@ async def update_tag(tag_id: int, body: TagModel, db: AsyncSession = Depends(get
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
 
 
-@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tag_id}", dependencies=[Depends(admin_moderator)], status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     """
     The delete_tag function deletes a tag from the database.

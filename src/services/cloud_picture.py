@@ -5,7 +5,6 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
-from src.schemas.pictures import PictureTransform
 
 
 class CloudPicture:
@@ -30,8 +29,17 @@ class CloudPicture:
         return folder_name
 
     @staticmethod
-    def upload_picture(file, public_id: str, transformation: dict):
-        # ---------------НЕ ЗАБУТИ ДОКСТРІНГИ!------------------
+    def upload_picture(file, public_id: str, transformation: dict = {}):
+        """
+        The upload_picture function takes in a file, public_id, and transformation.
+            The function then uploads the picture to cloudinary with the given public_id and transformation.
+            It returns a dictionary containing information about the uploaded picture.
+
+        :param file: Specify the file to upload
+        :param public_id: str: Specify the name of the file that is being uploaded
+        :param transformation: dict: Specify the transformation that will be applied to the image
+        :return: A dict with the image's url, id and more
+        """
 
         r = cloudinary.uploader.upload(file, public_id=public_id, overwrite=True, transformation=transformation)
         return r
@@ -41,14 +49,12 @@ class CloudPicture:
         """
         The get_url_for_picture function takes in a public_id and an r (which is the result
         of a cloudinary.api.resources() call) and returns the url for that picture, with width=350, height=350,
-        crop='fill', and version = r['verison']
+        crop='fill', and version = r['version']
 
         :param public_id: Identify the image in cloudinary
         :param r: Get the version of the image
         :return: A url for a picture
         """
 
-        src_url = cloudinary.CloudinaryImage(public_id).build_url(
-            width=350, height=350, crop="fill", version=r.get("version")
-        )
+        src_url = cloudinary.CloudinaryImage(public_id).build_url(width=350, height=350, crop="fill", version=r.get("version"))
         return src_url
