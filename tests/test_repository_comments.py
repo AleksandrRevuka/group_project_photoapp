@@ -12,7 +12,7 @@ from src.repository.comments import (
     get_comments_to_picture
 )
 
-class TestNotes(unittest.IsolatedAsyncioTestCase):
+class TestComments(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)
         self.user = User(id=1)

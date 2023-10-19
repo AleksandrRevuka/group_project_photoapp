@@ -13,7 +13,7 @@ from src.repository.tags import (
     retrieve_tags_for_picture
 )
 
-class TestNotes(unittest.IsolatedAsyncioTestCase):
+class TestTags(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)
