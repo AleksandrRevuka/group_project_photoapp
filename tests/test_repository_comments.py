@@ -30,31 +30,34 @@ class TestNotes(unittest.IsolatedAsyncioTestCase):
         return comment
         
     async def test_create_comment(self):
-        comment = CommentCreate(user_id=4, text='test comment', picture_id='1')
+        comment = CommentCreate(user_id=1, text=self._create_mock_comment().text, picture_id=self._create_mock_comment().picture_id)
         result = await create_comment(body=comment, db=self.session)
         self.assertEqual(result.text, comment.text)
         
     async def test_update_comment(self):
-        comment_id = 1
+        comment_id = self._create_mock_comment().id
         mock_body = CommentUpdate(text="Updated comment text")
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
-        updated_comment = await update_comment(comment_id=comment_id, body=mock_body, db=self.session)
-        self.assertNotEqual(updated_comment.text, self._create_mock_comment().text)
-        self.assertEqual(updated_comment.text, "Updated comment text")  
+        result = await update_comment(comment_id=comment_id, body=mock_body, db=self.session)
+        self.assertNotEqual(result.text, self._create_mock_comment().text)
+        self.assertEqual(result.text, "Updated comment text")  
     
 
     async def test_delete_comment(self):
-        comment_id = 2
+        comment_id = self._create_mock_comment().id
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
         result = await delete_comment(comment_id=comment_id, db=self.session)
+
 
     async def test_get_comments_of_user(self):
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
         result = await get_comments_of_user(skip=0, limit=10, user_id=1, db=self.session)
+        self.assertTrue(result)
         
     async def test_get_comments_to_foto(self):
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
         result = await get_comments_to_foto(skip=0, limit=10, picture_id=2, db=self.session)
+        self.assertTrue(result)
 
 
 if __name__ == "__main__":
