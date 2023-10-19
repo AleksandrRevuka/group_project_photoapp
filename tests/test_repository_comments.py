@@ -9,7 +9,7 @@ from src.repository.comments import (
     update_comment,
     delete_comment,
     get_comments_of_user,
-    get_comments_to_photo
+    get_comments_to_picture
 )
 
 class TestNotes(unittest.IsolatedAsyncioTestCase):
@@ -54,9 +54,9 @@ class TestNotes(unittest.IsolatedAsyncioTestCase):
         result = await get_comments_of_user(skip=0, limit=10, user_id=1, db=self.session)
         self.assertTrue(result)
         
-    async def test_get_comments_to_photo(self):
+    async def test_get_comments_to_picture(self):
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
-        result = await get_comments_to_photo(skip=0, limit=10, picture_id=2, db=self.session)
+        result = await get_comments_to_picture(skip=0, limit=10, picture_id=2, db=self.session)
         self.assertTrue(result)
 
 
