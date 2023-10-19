@@ -83,13 +83,13 @@ async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
         raise error
 
 
-async def get_comments_to_photo(skip: int, limit: int, picture_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
+async def get_comments_to_picture(skip: int, limit: int, picture_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
     """
-    The get_comments_to_photo function returns a list of comments to the picture with id = picture_id.
+    The get_comments_to_picture function returns a list of comments to the picture with id = picture_id.
     The function takes three arguments: skip, limit and picture_id.
     Skip is an integer that indicates how many comments should be skipped before returning the result.
     Limit is an integer that indicates how many comments should be returned in total (after skipping).
-    Picture_id is an integer that represents the id of a particular photo.
+    Picture_id is an integer that represents the id of a particular picture.
 
     :param skip: int: Skip the first n comments
     :param limit: int: Limit the number of comments returned
