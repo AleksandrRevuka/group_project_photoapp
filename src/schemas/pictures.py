@@ -43,7 +43,7 @@ class PictureDB(PictureBase):
 
 class PictureResponse(BaseModel):
     picture: PictureDB
-    detail: str = "The picture was uploaded to the server."
+    detail: str
 
     # class ConfigDict:
     #     from_attributes = True

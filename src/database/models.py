@@ -2,7 +2,7 @@ import enum
 from datetime import datetime, timedelta
 from typing import List
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Table, event, func
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Float, Table, event, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql.schema import ForeignKey
 
@@ -61,6 +61,7 @@ class User(Base, BaseWithTimestamps):
 
     pictures: Mapped[list["Picture"]] = relationship("Picture", back_populates="user", cascade="all, delete")
     comments_user: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", cascade="all, delete")
+    ratings: Mapped["Rating"] = relationship("Rating", back_populates="user")
 
 
 class Tag(Base, BaseWithTimestamps):
@@ -96,6 +97,7 @@ class Picture(Base, BaseWithTimestamps):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
+    rating_average: Mapped[float] = mapped_column(Float)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="pictures")
@@ -103,6 +105,19 @@ class Picture(Base, BaseWithTimestamps):
     tags_picture: Mapped[List["Tag"]] = relationship(
         "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete"
     )
+    ratings: Mapped["Rating"] = relationship("Rating", back_populates="picture", cascade="all, delete")
+
+
+class Rating(Base, BaseWithTimestamps):
+    __tablename__ = "ratings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    rating: Mapped[int] = mapped_column(Integer)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id"))
+
+    user: Mapped["User"] = relationship("User", back_populates="ratings")
+    picture: Mapped[int] = relationship("Picture", back_populates="ratings")
 
 
 class InvalidToken(Base, BaseWithTimestamps):

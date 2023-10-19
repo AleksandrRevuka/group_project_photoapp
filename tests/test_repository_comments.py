@@ -12,42 +12,40 @@ from src.repository.comments import (
     get_comments_to_picture
 )
 
-class TestNotes(unittest.IsolatedAsyncioTestCase):
-
+class TestComments(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)
         self.user = User(id=1)
         self.mock_comment = self._create_mock_comment()
-        
+
     def tearDown(self):
         del self.session
-        
+
     def _create_mock_comment(self):
         comment = Comment()
         comment.id = 1
         comment.text = "comment text"
         comment.picture_id = 1
         return comment
-        
+
     async def test_create_comment(self):
+
         comment = CommentCreate(user_id=1, text=self._create_mock_comment().text, picture_id=self._create_mock_comment().picture_id)
         result = await create_comment(user_id=self.user, picture_id=self._create_mock_comment().picture_id, body=comment, db=self.session)
         self.assertEqual(result.text, comment.text)
-        
+
     async def test_update_comment(self):
         comment_id = self._create_mock_comment().id
         mock_body = CommentUpdate(text="Updated comment text")
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
         result = await update_comment(comment_id=comment_id, body=mock_body, current_user=self.user.id, db=self.session)
         self.assertNotEqual(result.text, self._create_mock_comment().text)
-        self.assertEqual(result.text, "Updated comment text")  
-    
+        self.assertEqual(result.text, "Updated comment text")
 
     async def test_delete_comment(self):
         comment_id = self._create_mock_comment().id
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
         result = await delete_comment(comment_id=comment_id, db=self.session)
-
 
     async def test_get_comments_of_user(self):
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_comment))
@@ -61,5 +59,4 @@ class TestNotes(unittest.IsolatedAsyncioTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()           
-        
+    unittest.main()
