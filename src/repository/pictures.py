@@ -7,6 +7,7 @@ from src.schemas.pictures import PictureNameUpdate, PictureDescrUpdate, PictureU
 from fastapi import HTTPException, status
 from sqlalchemy import select
 
+from src.services.qrcode_generator import qrcode_generator
 
 async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, tag_names: list, user: User, db: AsyncSession):
     """
@@ -201,3 +202,23 @@ async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
         return result
     else:
         return None
+    
+
+async def get_qrcode(picture_id: int, db: AsyncSession):
+    """
+    The get_qrcode function takes in a picture_id and returns the qrcode for that picture.
+        If no such picture exists, it returns None.
+    
+    :param picture_id: int: Specify the id of the picture
+    :param db: AsyncSession: Pass the database session into the function
+    :return: A qrcode object
+    :doc-author: Trelent
+    """
+    query = select(Picture).where(Picture.id == picture_id)
+    picture = await db.execute(query)
+    result = picture.scalars().first()
+    
+    if result is None:
+        return None
+
+    return qrcode_generator.generate_qrcode(result.picture_url)

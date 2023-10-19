@@ -237,3 +237,24 @@ async def delete_picture(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
 
     return picture
+
+
+@router.get(
+    "/pictures/picture/{picture_id}/qrcode",
+    dependencies=[Depends(admin_moderator_user)],
+    description="User, Moderator and Administrator have access",
+)
+async def get_qrcode_on_transformed_picture(picture_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    The get_qrcode_on_transformed_picture function returns the qrcode of a picture.
+        The function takes in an integer representing the id of a picture and returns its qrcode.
+    
+    :param picture_id: int: Get the picture id from the url
+    :param db: AsyncSession: Get the database session
+    :return: A qrcode
+    :doc-author: Trelent
+    """
+    qrcode = await repository_pictures.get_qrcode(picture_id, db)
+    if qrcode is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+    return qrcode
