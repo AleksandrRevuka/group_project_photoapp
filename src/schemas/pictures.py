@@ -19,7 +19,7 @@ class TagDB(TagBase):
 
 
 class PictureBase(BaseModel):
-    name: str  # photo's name
+    name: str  # picture's name
     description: str
 
 
@@ -50,11 +50,11 @@ class PictureResponse(BaseModel):
 
 
 class PictureNameUpdate(BaseModel):
-    name: str  # photo's name
+    name: str  # picture's name
 
 
 class PictureDescrUpdate(BaseModel):
-    description: str  # photo's name
+    description: str  # picture's name
 
 
 class PictureTransform(BaseModel):

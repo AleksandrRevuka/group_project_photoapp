@@ -99,25 +99,25 @@ async def remove_comment(
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
-async def comments_to_photo(
+async def comments_to_picture(
     picture_id: int,
     skip: int = 0,
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    The comments_to_photo function returns a list of comments to the photo with the given picture_id.
+    The comments_to_picture function returns a list of comments to the picture with the given picture_id.
     The skip and limit parameters are used for pagination, where skip is how many comments to skip and limit is how many
     comments to return.
 
-    :param picture_id: int: Get the comments to a specific photo
+    :param picture_id: int: Get the comments to a specific picture
     :param skip: int: Skip the first n comments
     :param limit: int: Limit the number of comments returned
     :param db: AsyncSession: Get the database session
-    :return: A list of comments to a photo
+    :return: A list of comments to a picture
     """
 
-    comments = await repository_comments.get_comments_to_photo(skip, limit, picture_id, db)
+    comments = await repository_comments.get_comments_to_picture(skip, limit, picture_id, db)
     if not comments:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
     return comments
