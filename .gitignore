@@ -16,5 +16,4 @@ alembic.ini
 pyproject.toml
 migrations/env.py
 /group_project_photoapp
-test_runner.py
 tests/test_commet.py
