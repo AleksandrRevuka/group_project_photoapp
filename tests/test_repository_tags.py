@@ -53,10 +53,19 @@ class TestNotes(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_tag(self):
         body = TagModel(tagname='test')
-        self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_tag_response))
+        self.session.execute.return_value = MagicMock(tag_response=MagicMock(return_value=self.mock_tag_response))
         result = await update_tag(tag_id=self._create_mock_tag().id, body=body, db=self.session)
-        # self.assertEqual(result.tagname, self._create_mock_tag().tagname)
+        self.assertNotEqual(result.tagname, self._create_mock_tag().tagname)
 
+    async def test_remove_tag(self):
+        self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_tag))
+        result = await remove_tag(tag_id=self._create_mock_tag().id, db=self.session)
+        self.assertIsNone(result)
+        
+    async def test_retrieve_tags_for_picture(self):
+        self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_tag))
+        result = await retrieve_tags_for_picture(picture_id=2, db=self.session)
+        self.assertTrue(result)
 
 if __name__ == "__main__":
     unittest.main()           
