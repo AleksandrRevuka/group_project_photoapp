@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from src.schemas.tags_schema import TagModel, TagResponse
+from src.schemas.tags import TagModel, TagResponse
 from src.database.models import Tag
 from src.repository.tags import (
     get_tags,

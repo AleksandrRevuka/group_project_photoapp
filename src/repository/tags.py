@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 
 from src.database.models import Picture, Tag, picture_tags
-from src.schemas.tags_schema import TagModel, TagResponse
+from src.schemas.tags import TagModel, TagResponse
 
 
 async def get_tags(db: AsyncSession):
