@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repository import tags as repository_tags
 from src.database.db import get_db
-from src.schemas.tags_schema import TagResponse, TagModel
+from src.schemas.tags import TagResponse, TagModel
 from src.services.roles import admin_moderator
 
 router = APIRouter(prefix="/tags", tags=["tags"])
