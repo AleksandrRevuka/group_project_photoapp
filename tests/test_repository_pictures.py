@@ -1,30 +1,23 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.schemas.pictures import (
-    PictureUpload,
-    PictureNameUpdate,
-    PictureDescrUpdate,
-)
-from src.database.models import User, Picture, Tag, Role
-from src.repository.pictures import (
-    save_data_of_picture_to_db,
-    update_picture_name,
-    update_picture_description,
-    get_all_pictures,
-    get_picture_by_id,
-    get_all_pictures_of_user,
-    remove_picture,
-    get_qrcode,
-    get_or_create_tag
-)
+from src.database.models import Picture, Role, Tag, User
+from src.repository.pictures import (get_all_pictures,
+                                     get_all_pictures_of_user,
+                                     get_or_create_tag, get_picture_by_id,
+                                     get_qrcode, remove_picture,
+                                     save_data_of_picture_to_db,
+                                     update_picture_description,
+                                     update_picture_name)
+from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
+                                  PictureUpload)
 
 
-class TestPictures(unittest.IsolatedAsyncioTestCase):
+class TestRepositoryPictures(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)
         self.user = User(id=1)
@@ -139,7 +132,7 @@ class TestPictures(unittest.IsolatedAsyncioTestCase):
 
     # ---------------------------------------------------------------testing of 'update_picture_description' function
 
-    async def test_update_picture_description_valid_datas(self):
+    async def test_update_picture_description_valid_data(self):
 
         # Picture to update is found in database and new description is not empty
         mock_body = PictureDescrUpdate(description="New description")
