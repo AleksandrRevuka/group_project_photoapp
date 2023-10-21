@@ -1,8 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
-from sqlalchemy import Enum
+from typing import List
+
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from src.database.models import Role
+from src.schemas.pictures import PictureUser
 
 
 class UserModel(BaseModel):
@@ -41,8 +43,29 @@ class UserDb(BaseModel):
     avatar: str
     roles: Role
 
-    class ConfigDict:
-        from_attributes = True
+
+class RatingDB(BaseModel):
+    id: int
+    rating: int
+    picture_id: int
+
+
+class CommentDB(BaseModel):
+    id: int
+    text: str
+
+
+class UserInfo(UserDb):
+    model_config = ConfigDict(from_attributes=True)
+
+    email: str
+    roles: Role
+    created_at: datetime
+    updated_at: datetime
+
+    pictures: List[PictureUser]
+    comments_user: List[CommentDB]
+    ratings: List[RatingDB]
 
 
 class UserResponse(BaseModel):
@@ -106,7 +129,8 @@ class ResetPassword(BaseModel):
 
     new_password: str
     confirm_password: str
-    
+
+
 class UserProfile(BaseModel):
     id: int
     username: str
@@ -119,6 +143,3 @@ class UserProfile(BaseModel):
     comments_count: int | None
     created_at: datetime
     updated_at: datetime
-    
-    class ConfigDict:
-        from_attributes = True

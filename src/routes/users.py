@@ -6,14 +6,14 @@ from src.conf.config import init_async_redis
 from src.database.db import get_db
 from src.database.models import Role, User
 from src.repository import users as repository_users
-from src.schemas.user import UserDb, UserProfile, UserResponse
+from src.schemas.user import UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("/me/", response_model=UserDb)
+@router.get("/me/", response_model=UserInfo)
 async def read_users_me(
     current_user: User = Depends(auth_service.get_current_user), redis_client: Redis = Depends(init_async_redis)
 ) -> User:
@@ -29,7 +29,7 @@ async def read_users_me(
     return current_user
 
 
-@router.patch("/edit_my_profile", response_model=UserResponse)
+@router.patch("/edit_my_profile", response_model=UserInfo)
 async def edit_my_profile(
     name: str,
     file: UploadFile = File(default=None),

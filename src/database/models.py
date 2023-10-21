@@ -2,10 +2,11 @@ import enum
 from datetime import datetime, timedelta
 from typing import List
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Float, Table, event, func
+from sqlalchemy import (Boolean, Column, DateTime, Enum, Float, Integer,
+                        String, Table, event, func)
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql.schema import ForeignKey
-from sqlalchemy.ext.asyncio import AsyncAttrs
 
 from src.conf.constant import REFRESH_TOKEN_TTL
 
@@ -62,7 +63,7 @@ class User(Base, BaseWithTimestamps):
 
     pictures: Mapped[list["Picture"]] = relationship("Picture", back_populates="user", cascade="all, delete")
     comments_user: Mapped[list["Comment"]] = relationship("Comment", back_populates="user", cascade="all, delete")
-    ratings: Mapped["Rating"] = relationship("Rating", back_populates="user")
+    ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="user")
 
 
 class Tag(Base, BaseWithTimestamps):

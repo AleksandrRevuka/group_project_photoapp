@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -11,6 +12,3 @@ class TagResponse(BaseModel):
     tagname: str
     created_at: datetime
     updated_at: datetime
-
-    class ConfigDict:
-        from_attributes = True
