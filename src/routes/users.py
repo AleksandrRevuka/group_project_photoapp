@@ -29,7 +29,7 @@ async def read_users_me(
     return current_user
 
 
-@router.patch("/edit_my_profile", response_model=UserInfo)
+@router.patch("/edit_my_profile", response_model=UserResponse)
 async def edit_my_profile(
     name: str,
     file: UploadFile = File(default=None),
