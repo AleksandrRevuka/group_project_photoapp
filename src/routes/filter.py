@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
 
 from src.database.db import get_db
-from src.schemas.filter import UserOut, UserFilter, AddressFilter, AddressOut
-from sqlalchemy import select
+from src.schemas.filter import UserOut, UserFilter
 from src.repository import filter as repository_filter
 from fastapi_filter import FilterDepends, with_prefix
 from fastapi_filter.contrib.sqlalchemy import Filter

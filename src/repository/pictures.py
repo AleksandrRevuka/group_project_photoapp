@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from src.services.qrcode_generator import qrcode_generator
 
-async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, tag_names: list, user: User, db: AsyncSession):
+async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, user: User, db: AsyncSession, tag_names: list):
     """
     The save_data_of_picture_to_db function saves the data of a picture to the database.
 
@@ -21,9 +21,10 @@ async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, tag_
     :return: A picture object
     """
     tags = []
-    for tag_name in tag_names:
-        tag = await get_or_create_tag(db, tag_name)
-        tags.append(tag)
+    if tag_names:
+        for tag_name in tag_names:
+            tag = await get_or_create_tag(db, tag_name)
+            tags.append(tag)
 
     picture_data = Picture(
         name=body.name, description=body.description, picture_url=picture_url, user_id=user.id, tags_picture=tags

@@ -5,11 +5,12 @@ from typing import List
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, Float, Table, event, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
 from src.conf.constant import REFRESH_TOKEN_TTL
 
 
-class Base(DeclarativeBase):
+class Base(AsyncAttrs, DeclarativeBase):
     """
     Base class for SQLAlchemy models.
 
@@ -86,8 +87,8 @@ class Comment(Base, BaseWithTimestamps):
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture", cascade="all, delete")
-    user: Mapped[int] = relationship("User", back_populates="comments_user", cascade="all, delete")
+    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture", cascade="all, delete", lazy="joined")
+    user: Mapped[int] = relationship("User", back_populates="comments_user", cascade="all, delete", lazy="joined")
 
 
 class Picture(Base, BaseWithTimestamps):
@@ -97,10 +98,10 @@ class Picture(Base, BaseWithTimestamps):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
-    rating_average: Mapped[float] = mapped_column(Float)
+    rating_average: Mapped[float] = mapped_column(Float, default=0.0)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    user: Mapped["User"] = relationship("User", back_populates="pictures")
+    user: Mapped["User"] = relationship("User", back_populates="pictures", lazy="joined")
     comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete")
     tags_picture: Mapped[List["Tag"]] = relationship(
         "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete"
@@ -116,8 +117,8 @@ class Rating(Base, BaseWithTimestamps):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id"))
 
-    user: Mapped["User"] = relationship("User", back_populates="ratings")
-    picture: Mapped[int] = relationship("Picture", back_populates="ratings")
+    user: Mapped["User"] = relationship("User", back_populates="ratings", lazy="joined")
+    picture: Mapped[int] = relationship("Picture", back_populates="ratings", lazy="joined")
 
 
 class InvalidToken(Base, BaseWithTimestamps):
