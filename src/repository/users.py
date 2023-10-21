@@ -2,11 +2,12 @@ from fastapi import UploadFile
 from libgravatar import Gravatar
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import NoResultFound
 
-from src.services.cloud_picture import CloudPicture
 from src.database.models import Comment, InvalidToken, Picture, Role, User
 from src.schemas.user import UserModel, UserProfile
+from src.services.cloud_picture import CloudPicture
 
 
 async def get_user_by_email(email: str, db: AsyncSession) -> User | None:
@@ -18,7 +19,14 @@ async def get_user_by_email(email: str, db: AsyncSession) -> User | None:
     :param db: AsyncSession: Pass the database session to the function
     :return: A user object if the user exists in the database
     """
-    query = select(User).filter_by(email=email)
+    query = (
+        select(User)
+        .options(selectinload(User.pictures))
+        .options(selectinload(User.comments_user))
+        .options(selectinload(User.ratings))
+        .filter_by(email=email)
+    )
+
     result = await db.execute(query)
     user = result.scalars().first()
     return user

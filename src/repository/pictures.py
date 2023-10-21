@@ -1,13 +1,14 @@
 from typing import Sequence
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.database.models import Picture, User, Tag, Role
-from src.schemas.pictures import PictureNameUpdate, PictureDescrUpdate, PictureUpload
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.database.models import Picture, Role, Tag, User
+from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
+                                  PictureUpload)
 from src.services.qrcode_generator import qrcode_generator
+
 
 async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, user: User, db: AsyncSession, tag_names: list):
     """
@@ -32,6 +33,7 @@ async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, user
     db.add(picture_data)
     await db.commit()
     await db.refresh(picture_data)
+
     return picture_data
 
 
@@ -107,13 +109,12 @@ async def update_picture_description(id: int, body: PictureDescrUpdate, current_
     if not picture_descr:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture is not found")
 
-    # Перевірка того, що коментар не порожній
     if body.description == "":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Name of picture can't be empty",
         )
-    # Перезаписуємо коментар з новими даними
+
     picture_descr.description = body.description
     db.add(picture_descr)
     await db.commit()
@@ -203,13 +204,13 @@ async def remove_picture(picture_id: int, current_user: User, db: AsyncSession):
         return result
     else:
         return None
-    
+
 
 async def get_qrcode(picture_id: int, db: AsyncSession):
     """
     The get_qrcode function takes in a picture_id and returns the qrcode for that picture.
         If no such picture exists, it returns None.
-    
+
     :param picture_id: int: Specify the id of the picture
     :param db: AsyncSession: Pass the database session into the function
     :return: A qrcode object
@@ -218,7 +219,7 @@ async def get_qrcode(picture_id: int, db: AsyncSession):
     query = select(Picture).where(Picture.id == picture_id)
     picture = await db.execute(query)
     result = picture.scalars().first()
-    
+
     if result is None:
         return None
 

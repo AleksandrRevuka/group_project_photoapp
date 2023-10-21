@@ -1,19 +1,15 @@
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 
 from src.database.db import get_db
 from src.database.models import User
-from src.schemas.pictures import (
-    PictureUpload,
-    PictureResponse,
-    PictureNameUpdate,
-    PictureDescrUpdate,
-    PictureTransform,
-)
+from src.repository import pictures as repository_pictures
+from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
+                                  PictureResponse, PictureTransform,
+                                  PictureUpload)
+from src.services.auth import auth_service
 from src.services.cloud_picture import CloudPicture
 from src.services.roles import admin_moderator_user
-from src.repository import pictures as repository_pictures
-from src.services.auth import auth_service
 
 router = APIRouter(prefix="/pictures", tags=["pictures"])
 
@@ -56,7 +52,7 @@ async def upload_picture_to_cloudinary(
     }
     info_file = CloudPicture.upload_picture(file.file, public_id, transformation)
     picture_url = CloudPicture.get_url_for_picture(public_id, info_file)
-
+    tag_names = []
     if len(body.tags[0]) > 0:
         tag_names = list(set(body.tags[0].split(",")))
         if len(tag_names) > 5:
@@ -66,7 +62,7 @@ async def upload_picture_to_cloudinary(
             if len(tag) > 25:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The length of tags should not exceed 25")
 
-    picture_data = await repository_pictures.save_data_of_picture_to_db(body, picture_url, current_user, db, tag_names=[])
+    picture_data = await repository_pictures.save_data_of_picture_to_db(body, picture_url, current_user, db, tag_names=tag_names)
     return {
         "picture": picture_data,
         "detail": "The picture was uploaded to the server.",
@@ -249,7 +245,7 @@ async def get_qrcode_on_transformed_picture(picture_id: int, db: AsyncSession = 
     """
     The get_qrcode_on_transformed_picture function returns the qrcode of a picture.
         The function takes in an integer representing the id of a picture and returns its qrcode.
-    
+
     :param picture_id: int: Get the picture id from the url
     :param db: AsyncSession: Get the database session
     :return: A qrcode
