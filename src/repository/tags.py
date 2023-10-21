@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 
-from src.database.models import Picture, Tag, picture_tags
+from src.database.models import Picture, Tag
 from src.schemas.tags import TagModel, TagResponse
 
 
@@ -107,15 +107,8 @@ async def retrieve_tags_for_picture(picture_id: int, db: AsyncSession):
     :param db: AsyncSession: Pass the database session to the function
     :return: A list of tags for a given picture
     """
-    query = (
-        select(Tag)
-        .join(picture_tags, Tag.id == picture_tags.c.tag_id)
-        .join(Picture, Picture.id == picture_tags.c.picture_id)
-        .where(Picture.id == picture_id)
-    )
 
-    result = await db.execute(query)
-
-    tags = result.scalars().all()
-
+    picture = await db.scalar(select(Picture).filter(Picture.id == picture_id))
+    if picture:
+        tags = [tag for tag in await picture.awaitable_attrs.tags_picture]
     return tags

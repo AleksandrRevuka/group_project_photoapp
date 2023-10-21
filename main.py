@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import auth, comments, pictures, tags, users, rating
+from src.routes import auth, comments, pictures, tags, users, rating, filter
 
 logger = logging.getLogger("uvicorn")
 
@@ -22,6 +22,7 @@ app.include_router(comments.router, prefix="/api")
 app.include_router(tags.router, prefix="/api")
 app.include_router(pictures.router, prefix="/api")
 app.include_router(rating.router, prefix="/api")
+app.include_router(filter.router, prefix="/api")
 
 
 @app.on_event("startup")
