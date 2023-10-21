@@ -1,17 +1,15 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from src.schemas.tags import TagModel, TagResponse
-from src.database.models import Tag
-from src.routes.tags import (
-    get_tags,
-    get_tag,
-    delete_tag,
-    tags_of_picture
-)
+from unittest.mock import AsyncMock, MagicMock
 
-class TestNotes(unittest.IsolatedAsyncioTestCase):
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.database.models import Tag
+from src.routes.tags import delete_tag, get_tag, get_tags, tags_of_picture
+from src.schemas.tags import TagModel, TagResponse
+
+
+class TestRouteTags(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)

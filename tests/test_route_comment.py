@@ -1,18 +1,16 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.schemas.comments import CommentCreate, CommentUpdate
 from src.database.models import Comment, User
-from src.routes.comments import (
-    create_comment,
-    update_comment,
-    remove_comment,
-    comments_to_picture,
-    comments_of_user
-)
+from src.routes.comments import (comments_of_user, comments_to_picture,
+                                 create_comment, remove_comment,
+                                 update_comment)
+from src.schemas.comments import CommentCreate, CommentUpdate
 
-class TestNotes(unittest.IsolatedAsyncioTestCase):
+
+class TestRoutComment(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)
@@ -27,7 +25,6 @@ class TestNotes(unittest.IsolatedAsyncioTestCase):
         comment.id = 1
         comment.text = "comment text"
         comment.picture_id = 1
-        comment.tagname = 'old'
         return comment
         
     async def test_create_comment(self):

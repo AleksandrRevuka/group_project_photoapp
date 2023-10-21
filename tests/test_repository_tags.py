@@ -1,19 +1,17 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
-from src.schemas.tags import TagModel, TagResponse
-from src.database.models import Tag
-from src.repository.tags import (
-    get_tags,
-    get_tag_by_id,   
-    get_tag_by_tagname,
-    update_tag,
-    remove_tag,
-    retrieve_tags_for_picture
-)
+from unittest.mock import AsyncMock, MagicMock
 
-class TestTags(unittest.IsolatedAsyncioTestCase):
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.database.models import Tag
+from src.repository.tags import (get_tag_by_id, get_tag_by_tagname, get_tags,
+                                 remove_tag, retrieve_tags_for_picture,
+                                 update_tag)
+from src.schemas.tags import TagModel, TagResponse
+
+
+class TestRepositoryTags(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.session = AsyncMock(spec=AsyncSession)
