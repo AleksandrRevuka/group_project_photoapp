@@ -112,7 +112,7 @@ async def update_picture_description(id: int, body: PictureDescrUpdate, current_
     if body.description == "":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Name of picture can't be empty",
+            detail="Description of picture can't be empty",
         )
 
     picture_descr.description = body.description
