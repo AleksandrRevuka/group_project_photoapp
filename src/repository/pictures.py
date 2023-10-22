@@ -55,6 +55,7 @@ async def get_or_create_tag(db: AsyncSession, tag_name: str) -> Tag:
         tag = Tag(tagname=tag_name)
         db.add(tag)
         await db.commit()
+        return tag
 
     return tag
 

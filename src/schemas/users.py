@@ -141,5 +141,5 @@ class UserProfile(BaseModel):
     is_active: bool
     pictures_count: int | None
     comments_count: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None
+    updated_at: datetime | None

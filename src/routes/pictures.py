@@ -52,6 +52,7 @@ async def upload_picture_to_cloudinary(
     }
     info_file = CloudPicture.upload_picture(file.file, public_id, transformation)
     picture_url = CloudPicture.get_url_for_picture(public_id, info_file)
+    
     tag_names = []
     if len(body.tags[0]) > 0:
         tag_names = list(set(body.tags[0].split(",")))

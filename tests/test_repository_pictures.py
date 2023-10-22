@@ -33,7 +33,7 @@ class TestRepositoryPictures(unittest.IsolatedAsyncioTestCase):
         picture.name = "picture_name_test"
         picture.description = "picture_description_test"
         picture.picture_url = "https://example.com/test.jpg"
-
+        
         tag1 = Tag(tagname='tag1')
         tag2 = Tag(tagname='tag2')
         tag3 = Tag(tagname='tag3')

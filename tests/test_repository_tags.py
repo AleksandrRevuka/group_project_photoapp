@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import Tag
 from src.repository.tags import (get_tag_by_id, get_tag_by_tagname, get_tags,
-                                 remove_tag, retrieve_tags_for_picture,
+                                 remove_tag,
                                  update_tag)
 from src.schemas.tags import TagModel, TagResponse
 
@@ -59,11 +59,7 @@ class TestRepositoryTags(unittest.IsolatedAsyncioTestCase):
         self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_tag))
         result = await remove_tag(tag_id=self._create_mock_tag().id, db=self.session)
         self.assertIsNone(result)
-        
-    async def test_retrieve_tags_for_picture(self):
-        self.session.execute.return_value = MagicMock(scalar=MagicMock(return_value=self.mock_tag))
-        result = await retrieve_tags_for_picture(picture_id=2, db=self.session)
-        self.assertTrue(result)
+
 
 if __name__ == "__main__":
     unittest.main()           

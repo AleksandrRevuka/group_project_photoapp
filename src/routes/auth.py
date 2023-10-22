@@ -8,7 +8,7 @@ from src.conf.constant import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import users as repository_users
-from src.schemas.user import RequestEmail, TokenModel, UserModel, UserResponse
+from src.schemas.users import RequestEmail, TokenModel, UserModel, UserResponse
 from src.services.auth import auth_service
 from src.services.email import send_email
 
