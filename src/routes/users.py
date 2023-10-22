@@ -6,7 +6,7 @@ from src.conf.config import init_async_redis
 from src.database.db import get_db
 from src.database.models import Role, User
 from src.repository import users as repository_users
-from src.schemas.user import UserDb, UserInfo, UserProfile, UserResponse
+from src.schemas.users import UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator
 

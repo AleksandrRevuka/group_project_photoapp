@@ -1,3 +1,4 @@
+
 from fastapi import UploadFile
 from libgravatar import Gravatar
 from sqlalchemy import func, select
@@ -6,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import NoResultFound
 
 from src.database.models import Comment, InvalidToken, Picture, Role, User
-from src.schemas.user import UserModel, UserProfile
+from src.schemas.users import UserModel, UserProfile
 from src.services.cloud_picture import CloudPicture
 
 
@@ -213,9 +214,9 @@ async def get_user_profile(user: User, db: AsyncSession):
             is_active=user.is_active,
             pictures_count=pictures_count,
             comments_count=comments_count,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
             confirmed=user.confirmed,
+            created_at=user.created_at,
+            updated_at=user.created_at
         )
         return user_profile
     return None
