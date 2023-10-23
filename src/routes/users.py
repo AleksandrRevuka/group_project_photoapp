@@ -9,6 +9,7 @@ from src.repository import users as repository_users
 from src.schemas.users import UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator
+from src.conf.messages import messages
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -52,11 +53,11 @@ async def edit_my_profile(
     user_exist = await repository_users.get_user_username(name, db)
 
     if user_exist:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this name already exists!")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_WITH_THIS_NAME_ALREADY_EXISTS"))
 
     user = await repository_users.edit_my_profile(current_user.email, file, name, db)
 
-    return {"user": user, "detail": "My profile was successfully edited"}
+    return {"user": user, "detail": messages.get_message("MY_PROFILE_WAS_SUCCESSFULLY_EDITED")}
 
 
 @router.get("/all_users", dependencies=[Depends(admin)], response_model=list[UserDb])
@@ -103,7 +104,7 @@ async def user_profile(
         user = await repository_users.get_user_profile(user_exist, db)
         return user
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
 
 
 @router.patch("/ban_user", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
@@ -130,15 +131,15 @@ async def ban_user(
         await redis_client.delete(key_to_clear)
 
         if user_banned.username == current_user.username:
-            return {"user": user_banned, "detail": "You can't ban yourself"}
+            return {"user": user_banned, "detail": messages.get_message("YOU_CANT_BAN_YOURSELF")}
         elif not user_banned.is_active:
-            return {"user": user_banned, "detail": "User has already been banned"}
+            return {"user": user_banned, "detail": messages.get_message("USER_HAS_ALREADY_BANNED")}
 
         else:
             user = await repository_users.ban_user(user_banned.email, db)
-            return {"user": user, "detail": f"The user {user_banned.username} has been banned"}
+            return {"user": user, "detail": f"{user_banned.username} " + messages.get_message("USER_HAS_BEEN_BANNED")}
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
 
 
 @router.patch("/activate_user", dependencies=[Depends(admin)], response_model=UserResponse)
@@ -158,9 +159,9 @@ async def activate_user(
     user_activate = await repository_users.get_user_username(username, db)
     if user_activate:
         user = await repository_users.activate_user(user_activate.email, db)
-        return {"user": user, "detail": f"The user {user_activate.username} has been activated"}
+        return {"user": user, "detail": f"{user_activate.username} " + messages.get_message("USER_HAS_BEEN_ACTIVATED")}
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
 
 
 @router.patch("/change_role", dependencies=[Depends(admin)], response_model=UserResponse)
@@ -191,13 +192,13 @@ async def change_role(
         if user.is_active and user.confirmed:
             if current_user.username != user.username:
                 user = await repository_users.change_role(user.email, role, db)
-                return {"user": user, "detail": "The user's role has been changed"}
+                return {"user": user, "detail": messages.get_message("USERS_ROLE_HAS_BEEN_CHANGED")}
 
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change your role")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("YOU_CANT_CHANGE_YOUR_ROLE"))
         else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change the role of a banned user or not confirmed"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("YOU_CANT_CHANGE_ROLE_OF_BANNED_NOT_CONFIRMED_USER")
             )
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))

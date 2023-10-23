@@ -7,6 +7,7 @@ from src.repository import tags as repository_tags
 from src.database.db import get_db
 from src.schemas.tags import TagResponse, TagModel
 from src.services.roles import admin_moderator
+from src.conf.messages import messages
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -46,7 +47,7 @@ async def get_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     """
     tag = await repository_tags.get_tag_by_id(tag_id, db)
     if tag is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("TAGNAME_NOT_FOUND"))
     return tag
 
 
@@ -70,9 +71,9 @@ async def update_tag(tag_id: int, body: TagModel, db: AsyncSession = Depends(get
         if exist_tag is None:
             updated_tag = await repository_tags.update_tag(tag_id, body, db)
             return updated_tag
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="tagname already exist")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=messages.get_message("TAGNAME_ALREADY_EXIST"))
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("TAGNAME_NOT_FOUND"))
 
 
 @router.delete("/{tag_id}", dependencies=[Depends(admin_moderator)], status_code=status.HTTP_204_NO_CONTENT)
@@ -88,7 +89,7 @@ async def delete_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     """
     tag = await repository_tags.get_tag_by_id(tag_id, db)
     if tag is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("TAGNAME_NOT_FOUND"))
 
     result = await repository_tags.remove_tag(tag_id, db)
     return result

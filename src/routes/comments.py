@@ -7,7 +7,7 @@ from src.services.roles import admin_moderator_user, admin_moderator
 from src.repository import comments as repository_comments
 from src.services.auth import auth_service
 from src.database.models import User
-
+from src.conf.messages import messages
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
@@ -34,7 +34,7 @@ async def create_comment(
 
     comment = await repository_comments.create_comment(body, picture_id, current_user.id, db)
     if comment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENT_NOT_CREATED"))
     return comment
 
 
@@ -65,7 +65,7 @@ async def update_comment(
 
     comment = await repository_comments.update_comment(comment_id, body, current_user.id, db)
     if comment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENT_NOT_CREATED"))
     return comment
 
 
@@ -119,7 +119,7 @@ async def comments_to_picture(
 
     comments = await repository_comments.get_comments_to_picture(skip, limit, picture_id, db)
     if not comments:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENTS_NOT_FOUND"))
     return comments
 
 
@@ -148,5 +148,5 @@ async def comments_of_user(
 
     comments = await repository_comments.get_comments_of_user(skip, limit, user_id, db)
     if not comments:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENTS_NOT_FOUND"))
     return comments

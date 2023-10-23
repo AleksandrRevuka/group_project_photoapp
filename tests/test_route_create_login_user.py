@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import User
+from src.conf.messages import messages
 
 
 @pytest.mark.asyncio
@@ -45,7 +46,7 @@ async def test_repeat_create_user(client: AsyncClient, user, monkeypatch):
     )
     assert response.status_code == 409, response.text
     data = response.json()
-    assert data["detail"] == "Account already exists"
+    assert data["detail"] == messages.get_message("ACCOUNT_ALREADY_EXISTS")
 
 
 @pytest.mark.asyncio
@@ -63,7 +64,7 @@ async def test_login_user_invalid_email(client: AsyncClient, user):
     )
     assert response.status_code == 401, response.text
     data = response.json()
-    assert data["detail"] == "Invalid email"
+    assert data["detail"] == messages.get_message("INVALID_EMAIL")
 
 
 @pytest.mark.asyncio
@@ -82,7 +83,7 @@ async def test_login_user_not_confirmed(client: AsyncClient, user):
     )
     assert response.status_code == 401, response.text
     data = response.json()
-    assert data["detail"] == "Email not confirmed"
+    assert data["detail"] == messages.get_message("EMAIL_NOT_CONFIRMED")
 
 
 @pytest.mark.asyncio
@@ -105,7 +106,7 @@ async def test_login_wrong_password(client: AsyncClient, user, session: AsyncSes
 
     assert response.status_code == 401, response.text
     data = response.json()
-    assert data["detail"] == "Invalid password"
+    assert data["detail"] == messages.get_message("INVALID_PASSWORD")
 
 
 @pytest.mark.asyncio

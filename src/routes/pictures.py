@@ -10,6 +10,7 @@ from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
 from src.services.auth import auth_service
 from src.services.cloud_picture import CloudPicture
 from src.services.roles import admin_moderator_user
+from src.conf.messages import messages
 
 router = APIRouter(prefix="/pictures", tags=["pictures"])
 
@@ -57,16 +58,16 @@ async def upload_picture_to_cloudinary(
     if len(body.tags[0]) > 0:
         tag_names = list(set(body.tags[0].split(",")))
         if len(tag_names) > 5:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The number of tags should not exceed 5")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("THE_NUMBER_OF_TAGS_SHOULD_NOT_EXCEED_5"))
 
         for tag in tag_names:
             if len(tag) > 25:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The length of tags should not exceed 25")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("THE_NUMBER_OF_TAGS_SHOULD_NOT_EXCEED_25"))
 
     picture_data = await repository_pictures.save_data_of_picture_to_db(body, picture_url, current_user, db, tag_names=tag_names)
     return {
         "picture": picture_data,
-        "detail": "The picture was uploaded to the server.",
+        "detail": messages.get_message("PICTURE_WAS_UPLOADED_TO_SERVER"),
     }
 
 
@@ -96,7 +97,7 @@ async def update_name_of_picture(
 
     updated_name = await repository_pictures.update_picture_name(id, body, current_user.id, db)
     if updated_name is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment has been not updated")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENT_HAS_NOT_BEEN_UPDATED"))
     return updated_name
 
 
@@ -128,7 +129,7 @@ async def update_description_of_picture(
     if updated_descr is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Description has been not updated",
+            detail=messages.get_message("DESCRIPTION_HAS_NOT_BEEN_UPDATED"),
         )
     return updated_descr
 
@@ -156,7 +157,7 @@ async def get_all_pictures(
 
     pictures = await repository_pictures.get_all_pictures(skip, limit, db)
     if not pictures:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pictures not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
     return pictures
 
 
@@ -181,7 +182,7 @@ async def get_picture_by_id(
 
     pictures = await repository_pictures.get_picture_by_id(id, db)
     if not pictures:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
     return pictures
 
 
@@ -211,7 +212,7 @@ async def get_all_pictures_of_user(
     if not pictures:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Pictures of this user not found",
+            detail=messages.get_message("PICTURES_OF_USER_NOT_FOUND"),
         )
     return pictures
 
@@ -232,7 +233,7 @@ async def delete_picture(
     picture = await repository_pictures.remove_picture(picture_id, current_user, db)
 
     if picture is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
 
     return picture
 
@@ -254,5 +255,5 @@ async def get_qrcode_on_transformed_picture(picture_id: int, db: AsyncSession = 
     """
     qrcode = await repository_pictures.get_qrcode(picture_id, db)
     if qrcode is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
     return qrcode

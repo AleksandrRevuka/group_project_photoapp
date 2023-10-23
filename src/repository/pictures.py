@@ -9,6 +9,8 @@ from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
                                   PictureUpload)
 from src.services.qrcode_generator import qrcode_generator
 
+from src.conf.messages import messages
+
 
 async def save_data_of_picture_to_db(body: PictureUpload, picture_url: str, user: User, db: AsyncSession, tag_names: list):
     """
@@ -78,12 +80,12 @@ async def update_picture_name(id: int, body: PictureNameUpdate, current_user: in
     existing_name = await db.execute(picture_query)
     picture_name = existing_name.scalar()
     if not picture_name:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
 
     if body.name == "":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Name of picture can't be empty",
+            detail=messages.get_message("NAME_OF_PICTURE_CANT_BE_EMPTY"),
         )
 
     picture_name.name = body.name
@@ -108,12 +110,12 @@ async def update_picture_description(id: int, body: PictureDescrUpdate, current_
     existing_descr = await db.execute(picture_query)
     picture_descr = existing_descr.scalar()
     if not picture_descr:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
 
     if body.description == "":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Description of picture can't be empty",
+            detail=messages.get_message("DESCRIPTION_OF_PICTURE_CANT_BE_EMPTY"),
         )
 
     picture_descr.description = body.description
