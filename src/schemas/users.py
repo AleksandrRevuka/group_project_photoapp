@@ -1,4 +1,5 @@
 from datetime import datetime
+import enum
 from typing import List
 
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -139,3 +140,10 @@ class UserProfile(BaseModel):
     comments_count: int | None
     created_at: datetime | None
     updated_at: datetime | None
+    
+        
+class Action(enum.Enum):
+    ban: str = "ban"
+    activate: str = "activate"
+    change_role: str = "change_role"
+    

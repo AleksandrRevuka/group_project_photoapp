@@ -16,8 +16,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     Base class for SQLAlchemy models.
 
     """
-
-    pass
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
 
 class BaseWithTimestamps(DeclarativeBase):
@@ -51,7 +50,6 @@ picture_tags = Table(
 class User(Base, BaseWithTimestamps):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -69,7 +67,6 @@ class User(Base, BaseWithTimestamps):
 class Tag(Base, BaseWithTimestamps):
     __tablename__ = "tags"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tagname: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
 
     pictures_teg: Mapped[List["Picture"]] = relationship(
@@ -83,7 +80,6 @@ class Tag(Base, BaseWithTimestamps):
 class Comment(Base, BaseWithTimestamps):
     __tablename__ = "comments"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String(200), nullable=False)
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
@@ -95,7 +91,6 @@ class Comment(Base, BaseWithTimestamps):
 class Picture(Base, BaseWithTimestamps):
     __tablename__ = "pictures"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     picture_url: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -111,7 +106,6 @@ class Picture(Base, BaseWithTimestamps):
 class Rating(Base, BaseWithTimestamps):
     __tablename__ = "ratings"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     rating: Mapped[int] = mapped_column(Integer)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id"))
@@ -123,7 +117,6 @@ class Rating(Base, BaseWithTimestamps):
 class InvalidToken(Base, BaseWithTimestamps):
     __tablename__ = "invalid_tokens"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     token: Mapped[str] = mapped_column(String(250), nullable=False)
 
 
