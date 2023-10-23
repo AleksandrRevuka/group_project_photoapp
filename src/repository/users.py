@@ -314,43 +314,6 @@ async def change_role(email: str, role: Role, db: AsyncSession) -> User | None:
             raise e
     return None
 
-async def get_comments_of_user(skip: int, limit: int, user_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
-    """
-    The get_comments_of_user function returns a list of comments made by the user with the given id.
-
-    :param skip: int: Skip a certain number of rows
-    :param limit: int: Limit the number of comments returned
-    :param user_id: int: Filter the comments by user
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A list of comments
-    """
-
-    query = select(Comment).where(Comment.user_id == user_id).offset(skip).limit(limit)
-    comments = await db.execute(query)
-    result = comments.scalars().all()
-    return result
-
-
-async def get_all_pictures_of_user(user_id: int, skip: int, limit: int, db: AsyncSession) -> Sequence[Picture]:
-    """
-    The get_all_pictures_of_user function returns a list of all pictures that belong to the user with the given id.
-    The function takes in three arguments:
-        - user_id: The id of the user whose pictures we want to retrieve.
-        - skip: The number of records we want to skip before returning results (useful for pagination).
-        - limit: The maximum number of records we want returned (useful for pagination).
-
-    :param user_id: int: Identify the user
-    :param skip: int: Skip a certain amount of pictures
-    :param limit: int: Limit the number of pictures returned
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A list of pictures
-    """
-
-    query = select(Picture).where(Picture.user_id == user_id).offset(skip).limit(limit)
-    pictures = await db.execute(query)
-    result = pictures.scalars().all()
-    return result
-
 
 async def search_users(user_filter: UserFilter, db: AsyncSession):
     """
