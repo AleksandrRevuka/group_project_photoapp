@@ -3,8 +3,12 @@ import logging
 import click
 import redis.asyncio as redis_async
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi_limiter import FastAPILimiter
+
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -76,6 +80,15 @@ async def healthchecker(db: AsyncSession = Depends(get_db)) -> dict:
         color_error = click.style(e, bold=True, fg="red", italic=True)
         logger.error(e, extra={"color_message": color_error})
         raise HTTPException(status_code=500, detail="Error connecting to the database")
+
+
+templates = Jinja2Templates(directory='templates')
+app.mount("/static", StaticFiles(directory="static"), name="style.css")
+app.mount("/images", StaticFiles(directory="images"), name="schema.jpg")
+
+@app.get("/")
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "title": "PhotoApp"})
 
 
 if __name__ == "__main__":
