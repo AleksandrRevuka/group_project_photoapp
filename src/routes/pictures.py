@@ -13,6 +13,7 @@ from src.services.cloud_picture import CloudPicture
 from src.services.roles import admin_moderator_user
 from src.repository import pictures as repository_pictures
 from src.services.auth import auth_service
+from src.conf.messages import messages
 
 router = APIRouter(prefix="/pictures", tags=["pictures"])
 
@@ -75,7 +76,7 @@ async def update_name_of_picture(
 
     updated_name = await repository_pictures.update_picture_name(id, body, current_user.id, db)
     if updated_name is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment has been not updated")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_HAS_NOT_BEEN_UPDATED)
     return updated_name
 
 
@@ -107,7 +108,7 @@ async def update_description_of_picture(
     if updated_descr is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Description has been not updated",
+            detail=messages.DESCRIPTION_HAS_NOT_BEEN_UPDATED,
         )
     return updated_descr
 
@@ -135,7 +136,7 @@ async def get_all_pictures(
 
     pictures = await repository_pictures.get_all_pictures(skip, limit, db)
     if not pictures:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pictures not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PICTURES_NOT_FOUND)
     return pictures
 
 
@@ -160,7 +161,7 @@ async def get_picture_by_id(
 
     pictures = await repository_pictures.get_picture_by_id(id, db)
     if not pictures:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PICTURE_NOT_FOUND)
     return pictures
 
 
@@ -190,7 +191,7 @@ async def get_all_pictures_of_user(
     if not pictures:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Pictures of this user not found",
+            detail=messages.PICTURES_OF_USER_NOT_FOUND,
         )
     return pictures
 
@@ -217,7 +218,7 @@ async def delete_picture(
     picture = await repository_pictures.remove_picture(picture_id, current_user, db)
     
     if picture is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PICTURE_NOT_FOUND)
 
     return picture
 
@@ -239,5 +240,5 @@ async def get_qrcode_on_transformed_picture(picture_id: int, db: AsyncSession = 
     """
     qrcode = await repository_pictures.get_qrcode(picture_id, db)
     if qrcode is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.PICTURE_NOT_FOUND)
     return qrcode

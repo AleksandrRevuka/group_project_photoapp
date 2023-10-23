@@ -9,6 +9,7 @@ from src.repository import users as repository_users
 from src.schemas.user import UserDb, UserProfile, UserResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator
+from src.conf.messages import messages
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -52,11 +53,11 @@ async def edit_my_profile(
     user_exist = await repository_users.get_user_username(name, db)
 
     if user_exist:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this name already exists!")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.USER_WITH_NAME_ALREADY_EXIST)
 
     user = await repository_users.edit_my_profile(current_user.email, file, name, db)
 
-    return {"user": user, "detail": "My profile was successfully edited"}
+    return {"user": user, "detail": messages.MY_PROFILE_SUCCESSFULLY_EDITED}
 
 
 @router.get("/all_users", dependencies=[Depends(admin)], response_model=list[UserDb])
@@ -103,7 +104,7 @@ async def user_profile(
         user = await repository_users.get_user_profile(user_exist, db)
         return user
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND)
 
 
 @router.patch("/ban_user", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
@@ -130,15 +131,15 @@ async def ban_user(
         await redis_client.delete(key_to_clear)
 
         if user_banned.username == current_user.username:
-            return {"user": user_banned, "detail": "You can't ban yourself"}
+            return {"user": user_banned, "detail": messages.YOU_CANT_BAN_YOURSELF}
         elif not user_banned.is_active:
-            return {"user": user_banned, "detail": "User has already been banned"}
+            return {"user": user_banned, "detail": messages.USER_ALREADY_BANNED}
 
         else:
             user = await repository_users.ban_user(user_banned.email, db)
             return {"user": user, "detail": f"The user {user_banned.username} has been banned"}
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND)
 
 
 @router.patch("/activate_user", dependencies=[Depends(admin)], response_model=UserResponse)
@@ -160,7 +161,7 @@ async def activate_user(
         user = await repository_users.activate_user(user_activate.email, db)
         return {"user": user, "detail": f"The user {user_activate.username} has been activated"}
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND)
 
 
 @router.patch("/change_role", dependencies=[Depends(admin)], response_model=UserResponse)
@@ -191,13 +192,13 @@ async def change_role(
         if user.is_active and user.confirmed:
             if current_user.username != user.username:
                 user = await repository_users.change_role(user.email, role, db)
-                return {"user": user, "detail": "The user's role has been changed"}
+                return {"user": user, "detail": messages.USER_ROLE_HAS_BEEN_CHANGED}
 
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change your role")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.YOU_CANT_CHANGE_YOUR_ROLE)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change the role of a banned user or not confirmed"
             )
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND)
