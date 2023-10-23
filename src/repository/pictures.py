@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from fastapi import HTTPException, status
-from sqlalchemy import join, select
+from sqlalchemy import join, outerjoin, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -220,7 +220,7 @@ async def search_pictures(picture_filter: PictureFilter, db: AsyncSession):
 
     query = (
         select(Picture)
-        .select_from(join(Picture, picture_tags.join(Tag)))
+        .select_from(outerjoin(Picture, picture_tags.join(Tag)))
         .options(selectinload(Picture.comments_picture))
         .options(selectinload(Picture.tags_picture))
         .options(selectinload(Picture.ratings))

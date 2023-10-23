@@ -2,7 +2,7 @@
 from typing import Any, Sequence
 from fastapi import UploadFile
 from libgravatar import Gravatar
-from sqlalchemy import Row, RowMapping, func, select
+from sqlalchemy import Row, RowMapping, func, select,  outerjoin
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import NoResultFound
@@ -329,6 +329,7 @@ async def search_users(user_filter: UserFilter, db: AsyncSession):
 
     query = (
         select(User)
+        .select_from(outerjoin(User, Comment))
         .options(selectinload(User.pictures))
         .options(selectinload(User.comments_user))
         .options(selectinload(User.ratings))

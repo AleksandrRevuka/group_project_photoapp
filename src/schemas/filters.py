@@ -9,8 +9,6 @@ from src.database.models import Comment, Picture, Role, Tag, User
 
 
 class CommentOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     text: str
 
@@ -19,14 +17,16 @@ class TagOut(BaseModel):
     id: int
     tagname: str
 
-
-class PictureOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class PictureOutBase(BaseModel):
     id: int
     name: str
+    picture_url: str
     description: str
     rating_average: float
+
+class PictureOut(PictureOutBase):
+    model_config = ConfigDict(from_attributes=True)
+
     tags_picture: Optional[List[TagOut]] = []
     comments_picture: Optional[List[CommentOut]] = []
 
@@ -35,22 +35,17 @@ class UserIn(BaseModel):
     username: str
     roles: Role
 
-class PictureOut_(BaseModel):
-    id: int
-    name: str
-    description: str
-    rating_average: float
-
 
 class UserOut(UserIn):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    pictures: Optional[List[PictureOut_]] = []
+    pictures: Optional[List[PictureOutBase]] = []
     comments_user: Optional[List[CommentOut]] = []
 
 
 class CommentFilter(Filter):
+    id: Optional[int] = None
     text__ilike: Optional[str] = None
 
     class Constants(Filter.Constants):
@@ -58,6 +53,7 @@ class CommentFilter(Filter):
 
 
 class TagFilter(Filter):
+    id: Optional[int] = None
     tagname__ilike: Optional[str] = None
 
     class Constants(Filter.Constants):

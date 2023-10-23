@@ -10,7 +10,7 @@ from src.database.models import Role, User
 from src.repository import users as repository_users
 from src.schemas.comments import CommentDB
 from src.schemas.filters import UserFilter, UserOut
-from src.schemas.users import UserDb, UserInfo, UserProfile, UserResponse
+from src.schemas.users import Action, UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator, admin_moderator_user
 
@@ -103,99 +103,78 @@ async def user_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
 
 
-@router.patch("/ban_user", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
-async def ban_user(
+@router.patch("/{username}", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
+async def manage_user(
     username: str,
+    action: Action,
+    role: Role = Role.user,
     current_user: User = Depends(auth_service.get_current_user),
     redis_client: Redis = Depends(init_async_redis),
     db: AsyncSession = Depends(get_db),
-) -> dict:
+):
     """
-    The ban_user function is used to ban a user.
+    The manage_user function allows the admin to ban, activate or change role of a user.
+        The function takes in the username of the user to be managed and an action which can be one of:
+            - ban: bans a user if they are active. If they are already banned, it raises an error.
+            - activate: activates a banned user if they are inactive. If they are already active, it raises an error.
+            - change_role: changes role of any given user (except for admins) to any other role except for admin.
 
-    :param username: str: Get the username of the user that will be banned
-    :param current_user: User: Get the current user logged in
-    :param redis_client: Redis: Connect to the redis database
-    :param db: AsyncSession: Get the database session
-    :return: A dictionary with the user and a detail message
-    """
-
-    user_banned = await repository_users.get_user_username(username, db)
-
-    if user_banned:
-        key_to_clear = f"user:{user_banned.email}"
-        await redis_client.delete(key_to_clear)
-
-        if user_banned.username == current_user.username:
-            return {"user": user_banned, "detail": "You can't ban yourself"}
-        elif not user_banned.is_active:
-            return {"user": user_banned, "detail": "User has already been banned"}
-
-        else:
-            user = await repository_users.ban_user(user_banned.email, db)
-            return {"user": user, "detail": f"The user {user_banned.username} has been banned"}
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
-
-
-@router.patch("/activate_user", dependencies=[Depends(admin)], response_model=UserResponse)
-async def activate_user(
-    username: str,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    The activate_user function is used to activate a user.
-        The function takes in the username of the user to be activated and returns a dictionary containing
-        the details of that user and an appropriate message.
-
-    :param username: str: Get the username of the user to be deactivated
-    :param db: AsyncSession: Get the database connection
-    :return: The user and a detail message
-    """
-    user_activate = await repository_users.get_user_username(username, db)
-    if user_activate:
-        user = await repository_users.activate_user(user_activate.email, db)
-        return {"user": user, "detail": f"The user {user_activate.username} has been activated"}
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
-
-
-@router.patch("/change_role", dependencies=[Depends(admin)], response_model=UserResponse)
-async def change_role(
-    username: str,
-    role: Role,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    The change_role function allows the admin to change the role of a user.
-        The function takes in three parameters: username, role and current_user.
-        The username parameter is used to get the user from the database using
-        repository_users.get_user_username(). If this returns a valid user, then
-        we check if that user is active and confirmed (not banned). If they are not
-        banned or not confirmed, then we check if it's not our own account by comparing
-        usernames with current_user.username != user.username . If all these conditions are met
-
-    :param username: str: Get the username of the user whose role we want to change
-    :param role: Role: Pass the role that will be assigned to the user
+    :param username: str: Specify the username of the user to be managed
+    :param action: Action: Specify what action to take on the user
+    :param role: Role: Specify the new role for a user
     :param current_user: User: Get the current user
+    :param redis_client: Redis: Specify that the function depends on a redis client
     :param db: AsyncSession: Get the database session
-    :return: A dictionary containing the user and a detail message
+    :param : Specify the action that should be performed on the user
+    :return: A tuple of the user and a string with details about what happened
     """
 
-    user = await repository_users.get_user_username(username, db)
-    if user:
-        if user.is_active and user.confirmed:
-            if current_user.username != user.username:
-                user = await repository_users.change_role(user.email, role, db)
-                return {"user": user, "detail": "The user's role has been changed"}
+    user_action = await repository_users.get_user_username(username, db)
 
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change your role")
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change the role of a banned user or not confirmed"
-            )
-    else:
+    if not user_action:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
 
+    key_to_clear = f"user:{user_action.email}"
+    await redis_client.delete(key_to_clear)
+
+    if user_action.username == current_user.username:
+            return {"user": user_action, "detail": "You can't ban yourself"}
+  
+    if action == Action.ban:
+        if current_user.roles == (Role.admin or Role.moderator):
+            if user_action.is_active:
+                if user_action.username == current_user.username:
+                    return {"user": user_action, "detail": "You can't ban yourself"}
+                else:
+                    user = await repository_users.ban_user(user_action.email, db)
+                    return {"user": user, "detail": f"The user {user_action.username} has been banned"}
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already banned")
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You don't have permission to ban users.")
+
+    elif action == Action.activate:
+        if current_user.roles == Role.admin:
+            if not user_action.is_active:
+                user = await repository_users.activate_user(user_action.email, db)
+                return {"user": user, "detail": f"The user {user_action.username} has been activated"}
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already activated")
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You don't have permission to activate users.")
+
+    elif action == Action.change_role:
+        if current_user.roles == Role.admin:
+            if role is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                    detail="New role must be specified for changing the role.")
+            
+            user = await repository_users.change_role(user_action.email, role, db)
+            return {"user": user, "detail": f"The user's role has been changed to {role}"}
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                                detail="You don't have permission to change user roles.")
+    
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail="Invalid action specified. Supported actions: ban, activate, change_role.")
