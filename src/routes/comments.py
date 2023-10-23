@@ -1,19 +1,20 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
-from src.schemas.comments import CommentCreate, CommentUpdate
+from src.schemas.comments import CommentCreate, CommentDB, CommentUpdate
 from src.services.roles import admin_moderator_user, admin_moderator
 from src.repository import comments as repository_comments
 from src.services.auth import auth_service
 from src.database.models import User
 
 
-router = APIRouter(prefix="/comments", tags=["comments"])
+router = APIRouter(tags=["comments"])
 
 
 @router.post(
-    "/",
+    "/{picture_id}/comments",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
@@ -39,12 +40,13 @@ async def create_comment(
 
 
 @router.patch(
-    "/{comment_id}",
+    "/{picture_id}/comments/{comment_id}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def update_comment(
     comment_id: int,
+    picture_id: int,
     body: CommentUpdate,
     current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -63,19 +65,20 @@ async def update_comment(
     :return: A comment object
     """
 
-    comment = await repository_comments.update_comment(comment_id, body, current_user.id, db)
+    comment = await repository_comments.update_comment(picture_id, comment_id, body, current_user.id, db)
     if comment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not created")
     return comment
 
 
 @router.delete(
-    "/{comment_id}",
+    "/{picture_id}/comments/{comment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(admin_moderator)],
     description="Moderator and Administrator have access",
 )
 async def remove_comment(
+    picture_id: int,
     comment_id: int,
     db: AsyncSession = Depends(get_db),
 ):
@@ -90,12 +93,13 @@ async def remove_comment(
     :param : Specify the id of the comment to be deleted
     :return: A 204 status code
     """
-    comment = await repository_comments.delete_comment(comment_id, db)
+    comment = await repository_comments.delete_comment(comment_id, picture_id, db)
     return comment
 
 
 @router.get(
-    "/picture/{picture_id}",
+    "/{picture_id}/comments",
+    response_model=List[CommentDB],
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
@@ -118,35 +122,6 @@ async def comments_to_picture(
     """
 
     comments = await repository_comments.get_comments_to_picture(skip, limit, picture_id, db)
-    if not comments:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
-    return comments
-
-
-@router.get(
-    "/user/{user_id}",
-    dependencies=[Depends(admin_moderator_user)],
-    description="User, Moderator and Administrator have access",
-)
-async def comments_of_user(
-    user_id: int,
-    skip: int = 0,
-    limit: int = 10,
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    The get_comments_of_user function returns a list of comments for the user with the given id.
-    The function takes in an optional skip and limit parameter to paginate through results.
-
-    :param skip: int: Skip the first n comments
-    :param limit: int: Limit the number of comments returned
-    :param user_id: int: Get the comments of a specific user
-    :param db: AsyncSession: Get the database session
-    :param : Get the comments of a specific user
-    :return: A list of comments
-    """
-
-    comments = await repository_comments.get_comments_of_user(skip, limit, user_id, db)
     if not comments:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comments not found")
     return comments

@@ -88,8 +88,8 @@ class Comment(Base, BaseWithTimestamps):
     picture_id: Mapped[int] = mapped_column(Integer, ForeignKey("pictures.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture", cascade="all, delete", lazy="joined")
-    user: Mapped[int] = relationship("User", back_populates="comments_user", cascade="all, delete", lazy="joined")
+    picture: Mapped["Picture"] = relationship("Picture", back_populates="comments_picture", lazy="joined")
+    user: Mapped[int] = relationship("User", back_populates="comments_user", lazy="joined")
 
 
 class Picture(Base, BaseWithTimestamps):
@@ -103,11 +103,9 @@ class Picture(Base, BaseWithTimestamps):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="pictures", lazy="joined")
-    comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete")
-    tags_picture: Mapped[List["Tag"]] = relationship(
-        "Tag", secondary=picture_tags, back_populates="pictures_teg", cascade="all, delete"
-    )
-    ratings: Mapped["Rating"] = relationship("Rating", back_populates="picture", cascade="all, delete")
+    comments_picture: Mapped[list["Comment"]] = relationship("Comment", back_populates="picture", cascade="all, delete-orphan")
+    tags_picture: Mapped[List["Tag"]] = relationship("Tag", secondary=picture_tags, back_populates="pictures_teg")
+    ratings: Mapped["Rating"] = relationship("Rating", back_populates="picture", cascade="all, delete-orphan")
 
 
 class Rating(Base, BaseWithTimestamps):

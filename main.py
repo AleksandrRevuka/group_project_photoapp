@@ -10,19 +10,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import auth, comments, pictures, tags, users, rating, filter
+from src.routes import auth, comments, pictures, ratings, tags, users
 
 logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
-app.include_router(auth.router, prefix="/api")
-app.include_router(users.router, prefix="/api")
-app.include_router(comments.router, prefix="/api")
-app.include_router(tags.router, prefix="/api")
-app.include_router(pictures.router, prefix="/api")
-app.include_router(rating.router, prefix="/api")
-app.include_router(filter.router, prefix="/api")
+app.include_router(auth.router, prefix="/api/auth")
+app.include_router(users.router, prefix="/api/users")
+app.include_router(tags.router, prefix="/api/tags")
+app.include_router(comments.router, prefix="/api/pictures")
+app.include_router(pictures.router, prefix="/api/pictures")
+app.include_router(ratings.router, prefix="/api/pictures")
 
 
 @app.on_event("startup")

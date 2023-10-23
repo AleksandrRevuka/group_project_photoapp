@@ -1,10 +1,12 @@
 from typing import Sequence
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import join, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models import Picture, Role, Tag, User
+from src.database.models import Picture, Role, Tag, User, picture_tags
+from src.schemas.filters import PictureFilter
 from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
                                   PictureUpload)
 from src.services.qrcode_generator import qrcode_generator
@@ -123,26 +125,6 @@ async def update_picture_description(id: int, body: PictureDescrUpdate, current_
     return picture_descr
 
 
-async def get_all_pictures(skip: int, limit: int, db: AsyncSession) -> Sequence[Picture]:
-    """
-    The get_all_pictures function returns a list of all pictures in the database.
-        ---
-        get:
-          summary: Get all pictures from the database.
-          description: Returns a list of all pictures in the database, with optional pagination parameters.
-
-    :param skip: int: Skip a certain amount of pictures
-    :param limit: int: Limit the number of pictures that are returned
-    :param db: AsyncSession: Pass the database session into the function
-    :return: A list of picture objects
-    """
-
-    query = select(Picture).offset(skip).limit(limit)
-    pictures = await db.execute(query)
-    result = pictures.scalars().all()
-    return result
-
-
 async def get_picture_by_id(id: int, db: AsyncSession) -> Sequence[Picture]:
     """
     The get_picture_by_id function takes in an id and a database session,
@@ -156,27 +138,6 @@ async def get_picture_by_id(id: int, db: AsyncSession) -> Sequence[Picture]:
     query = select(Picture).where(Picture.id == id)
     picture = await db.execute(query)
     result = picture.scalars().all()
-    return result
-
-
-async def get_all_pictures_of_user(user_id: int, skip: int, limit: int, db: AsyncSession) -> Sequence[Picture]:
-    """
-    The get_all_pictures_of_user function returns a list of all pictures that belong to the user with the given id.
-    The function takes in three arguments:
-        - user_id: The id of the user whose pictures we want to retrieve.
-        - skip: The number of records we want to skip before returning results (useful for pagination).
-        - limit: The maximum number of records we want returned (useful for pagination).
-
-    :param user_id: int: Identify the user
-    :param skip: int: Skip a certain amount of pictures
-    :param limit: int: Limit the number of pictures returned
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A list of pictures
-    """
-
-    query = select(Picture).where(Picture.user_id == user_id).offset(skip).limit(limit)
-    pictures = await db.execute(query)
-    result = pictures.scalars().all()
     return result
 
 
@@ -225,3 +186,47 @@ async def get_qrcode(picture_id: int, db: AsyncSession):
         return None
 
     return qrcode_generator.generate_qrcode(result.picture_url)
+
+
+async def retrieve_tags_for_picture(picture_id: int, db: AsyncSession):
+    """
+    The retrieve_tags_for_picture function takes in a picture_id and an AsyncSession object.
+    It then uses the given session to execute a query that joins the Tag, Picture, and picture_tags tables together.
+    The function returns all of the tags associated with the given picture.
+
+    :param picture_id: int: Specify the picture to retrieve tags for
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A list of tags for a given picture
+    """
+
+    picture = await db.scalar(select(Picture).filter(Picture.id == picture_id))
+    if picture:
+        tags = [tag for tag in await picture.awaitable_attrs.tags_picture]
+        
+    return tags
+
+async def search_pictures(picture_filter: PictureFilter, db: AsyncSession):
+    """
+    The search_pictures function takes a PictureFilter object and an AsyncSession object as arguments.
+    The function then creates a query that selects all pictures, joins them with their tags, and loads the comments_picture,
+    tags_picture, and ratings attributes of each picture. The query is then filtered by the filter method of the PictureFilter
+    object passed to it as an argument. Finally, the sort method of this same PictureFilter object is called on this query to
+    sort it in some way (if applicable). The result is returned.
+
+    :param picture_filter: PictureFilter: Filter the pictures
+    :param db: AsyncSession: Pass the database session to the function
+    :return: A list of picture objects
+    """
+
+    query = (
+        select(Picture)
+        .select_from(join(Picture, picture_tags.join(Tag)))
+        .options(selectinload(Picture.comments_picture))
+        .options(selectinload(Picture.tags_picture))
+        .options(selectinload(Picture.ratings))
+    )
+
+    query = picture_filter.filter(query)
+    query = picture_filter.sort(query)
+    result = (await db.execute(query)).unique()
+    return result.scalars().all()

@@ -35,12 +35,18 @@ class UserIn(BaseModel):
     username: str
     roles: Role
 
+class PictureOut_(BaseModel):
+    id: int
+    name: str
+    description: str
+    rating_average: float
+
 
 class UserOut(UserIn):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    pictures: Optional[List[PictureOut]] = []
+    pictures: Optional[List[PictureOut_]] = []
     comments_user: Optional[List[CommentOut]] = []
 
 
@@ -59,6 +65,7 @@ class TagFilter(Filter):
 
 
 class PictureFilter(Filter):
+    id: Optional[int] = None
     name__ilike: Optional[str] = None
     description__ilike: Optional[str] = None
     rating_average: Optional[float] = None
@@ -75,6 +82,7 @@ class PictureFilter(Filter):
 
 
 class UserFilter(Filter):
+    id: Optional[int] = None
     username: Optional[str] = None
     username__ilike: Optional[str] = None
     username__like: Optional[str] = None

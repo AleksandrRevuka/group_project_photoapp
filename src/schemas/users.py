@@ -4,6 +4,7 @@ from typing import List
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 from src.database.models import Role
+from src.schemas.comments import CommentDB
 from src.schemas.pictures import PictureUser
 
 
@@ -48,11 +49,6 @@ class RatingDB(BaseModel):
     id: int
     rating: int
     picture_id: int
-
-
-class CommentDB(BaseModel):
-    id: int
-    text: str
 
 
 class UserInfo(UserDb):
