@@ -4,15 +4,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.database.models import User
-from src.repository import rating as repository_rating
-from src.schemas.rating import RatingResponse, AverageRatingResponse
+from src.repository import ratings as repository_rating
+from src.schemas.ratings import RatingResponse, AverageRatingResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator_user
 
-router = APIRouter(prefix="/rating", tags=["rating"])
+router = APIRouter(tags=["rating"])
 
 
-@router.post("/ratings/{picture_id}", dependencies=[Depends(admin_moderator_user)], response_model=RatingResponse)
+@router.post("{picture_id}/ratings", dependencies=[Depends(admin_moderator_user)], response_model=RatingResponse)
 async def create_picture_rating(
     picture_id: int, rating: int, current_user: User = Depends(auth_service.get_current_user), db: AsyncSession = Depends(get_db)
 ):
@@ -36,7 +36,7 @@ async def create_picture_rating(
     return {"rating": rating_picture, "detail": "Rating successfully added"}
 
 
-@router.get("/ratings/{picture_id}", dependencies=[Depends(admin_moderator_user)], response_model=AverageRatingResponse)
+@router.get("{picture_id}/ratings", dependencies=[Depends(admin_moderator_user)], response_model=AverageRatingResponse)
 async def picture_ratings(picture_id: int, db: AsyncSession = Depends(get_db)):
     """
     The picture_ratings function returns a list of ratings for the picture with the given id.
@@ -52,7 +52,7 @@ async def picture_ratings(picture_id: int, db: AsyncSession = Depends(get_db)):
     return picture
 
 
-@router.delete("/ratings_delete/", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin)])
+@router.delete("{picture_id}/ratings_delete", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin)])
 async def remove_photo_rating(
     picture_id: int,
     user_id: int,

@@ -8,11 +8,11 @@ from src.database.db import get_db
 from src.schemas.tags import TagResponse, TagModel
 from src.services.roles import admin_moderator
 
-router = APIRouter(prefix="/tags", tags=["tags"])
+router = APIRouter(tags=["tags"])
 
 
 @router.get(
-    "",
+    "/",
     response_model=List[TagResponse],
     dependencies=[Depends(admin_moderator)],
 )
@@ -92,27 +92,3 @@ async def delete_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
 
     result = await repository_tags.remove_tag(tag_id, db)
     return result
-
-
-@router.get(
-    "/picture/{picture_id}",
-    response_model=List[TagResponse],
-    dependencies=[Depends(admin_moderator)],
-    description="User, Moderator and Administrator have access",
-)
-async def tags_of_picture(
-    picture_id: int,
-    db: AsyncSession = Depends(get_db),
-) -> list:
-    """
-    The tags_of_picture function retrieves all tags for a given picture.
-        Args:
-            picture_id (int): The id of the picture to retrieve tags for.
-
-    :param picture_id: int: Specify the picture id of the picture we want to retrieve
-    :param db: AsyncSession: Pass the database session to the function
-    :param : Get the picture id from the url
-    :return: A list of tags for a given picture
-    """
-    tags = await repository_tags.retrieve_tags_for_picture(picture_id, db)
-    return tags

@@ -1,9 +1,9 @@
-from typing import Any, Sequence
+from typing import Sequence
+from sqlalchemy import select
 
-from sqlalchemy import select, Row, RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models import Comment
+from src.database.models import Comment, Picture
 from src.schemas.comments import CommentCreate, CommentUpdate
 from fastapi import HTTPException, status
 
@@ -30,7 +30,7 @@ async def create_comment(
     return new_comment
 
 
-async def update_comment(comment_id: int, body: CommentUpdate, current_user: int, db: AsyncSession) -> Comment:
+async def update_comment(picture_id, comment_id: int, body: CommentUpdate, current_user: int, db: AsyncSession) -> Comment:
     """
     The update_comment function updates a comment in the database.
         It takes in an id of the comment to be updated, and a CommentUpdate object containing the new text for that comment.
@@ -44,7 +44,7 @@ async def update_comment(comment_id: int, body: CommentUpdate, current_user: int
     :return: The updated comment
     """
 
-    comment_query = select(Comment).where(Comment.id == comment_id, Comment.user_id == current_user)
+    comment_query = select(Comment).join(Picture).where(Comment.id == comment_id, Picture.id == picture_id, Comment.user_id == current_user)
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
@@ -60,7 +60,7 @@ async def update_comment(comment_id: int, body: CommentUpdate, current_user: int
     return comment
 
 
-async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
+async def delete_comment(comment_id: int, picture_id: int, db: AsyncSession) -> Comment:
     """
     The delete_comment function deletes a comment from the database.
 
@@ -69,7 +69,7 @@ async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
     :return: None
     """
 
-    comment_query = select(Comment).where(Comment.id == comment_id)
+    comment_query = select(Comment).join(Picture).filter(Comment.id == comment_id, Picture.id == picture_id)
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
@@ -83,7 +83,7 @@ async def delete_comment(comment_id: int, db: AsyncSession) -> Comment:
         raise error
 
 
-async def get_comments_to_picture(skip: int, limit: int, picture_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
+async def get_comments_to_picture(skip: int, limit: int, picture_id: int, db: AsyncSession) -> Sequence[Comment]:
     """
     The get_comments_to_picture function returns a list of comments to the picture with id = picture_id.
     The function takes three arguments: skip, limit and picture_id.
@@ -99,23 +99,6 @@ async def get_comments_to_picture(skip: int, limit: int, picture_id: int, db: As
     """
 
     query = select(Comment).where(Comment.picture_id == picture_id).offset(skip).limit(limit)
-    comments = await db.execute(query)
-    result = comments.scalars().all()
-    return result
-
-
-async def get_comments_of_user(skip: int, limit: int, user_id: int, db: AsyncSession) -> Sequence[Row | RowMapping | Any]:
-    """
-    The get_comments_of_user function returns a list of comments made by the user with the given id.
-
-    :param skip: int: Skip a certain number of rows
-    :param limit: int: Limit the number of comments returned
-    :param user_id: int: Filter the comments by user
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A list of comments
-    """
-
-    query = select(Comment).where(Comment.user_id == user_id).offset(skip).limit(limit)
     comments = await db.execute(query)
     result = comments.scalars().all()
     return result

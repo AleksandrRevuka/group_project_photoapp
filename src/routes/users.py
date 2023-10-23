@@ -1,4 +1,6 @@
+from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi_filter import FilterDepends
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,14 +8,16 @@ from src.conf.config import init_async_redis
 from src.database.db import get_db
 from src.database.models import Role, User
 from src.repository import users as repository_users
+from src.schemas.comments import CommentDB
+from src.schemas.filters import UserFilter, UserOut
 from src.schemas.users import UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
-from src.services.roles import admin, admin_moderator
+from src.services.roles import admin, admin_moderator, admin_moderator_user
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["users"])
 
 
-@router.get("/me/", response_model=UserInfo)
+@router.get("/me", response_model=UserInfo)
 async def read_users_me(
     current_user: User = Depends(auth_service.get_current_user), redis_client: Redis = Depends(init_async_redis)
 ) -> User:
@@ -29,7 +33,7 @@ async def read_users_me(
     return current_user
 
 
-@router.patch("/edit_my_profile", response_model=UserResponse)
+@router.patch("/me", response_model=UserResponse)
 async def edit_my_profile(
     name: str,
     file: UploadFile = File(default=None),
@@ -59,29 +63,22 @@ async def edit_my_profile(
     return {"user": user, "detail": "My profile was successfully edited"}
 
 
-@router.get("/all_users", dependencies=[Depends(admin)], response_model=list[UserDb])
-async def all_users(
-    skip: int = 0,
-    limit: int = 10,
-    current_user: User = Depends(auth_service.get_current_user),
-    redis_client: Redis = Depends(init_async_redis),
-    db: AsyncSession = Depends(get_db),
-) -> list:
+@router.get("/", dependencies=[Depends(admin_moderator_user)], response_model=List[UserOut])
+async def search_users(
+    user_filter: UserFilter = FilterDepends(UserFilter), 
+    db: AsyncSession = Depends(get_db)):
     """
-    The all_users function returns a list of all users in the database.
+    The search_users function searches for users in the database.
 
-    :param skip: int: Skip a number of users in the database
-    :param limit: int: Limit the number of users returned
-    :param current_user: User: Get the current user
-    :param redis_client: Redis: Pass in the redis client object
-    :param db: AsyncSession: Create a database connection
-    :return: A list of user objects
+    :param user_filter: UserFilter: Define the filter object that will be used to search for users
+    :param db: AsyncSession: Get the database session
+    :return: A list of users
     """
-    key_to_clear = f"user:{current_user.email}"
-    await redis_client.delete(key_to_clear)
 
-    users = await repository_users.get_all_users(skip, limit, db)
+    users = await repository_users.search_users(user_filter, db)
+
     return users
+
 
 
 @router.get("/{username}", dependencies=[Depends(admin_moderator)], response_model=UserProfile)
@@ -201,3 +198,4 @@ async def change_role(
             )
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+

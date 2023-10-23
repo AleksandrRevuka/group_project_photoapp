@@ -1,12 +1,14 @@
 
+from typing import Any, Sequence
 from fastapi import UploadFile
 from libgravatar import Gravatar
-from sqlalchemy import func, select
+from sqlalchemy import Row, RowMapping, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import NoResultFound
 
 from src.database.models import Comment, InvalidToken, Picture, Role, User
+from src.schemas.filters import UserFilter
 from src.schemas.users import UserModel, UserProfile
 from src.services.cloud_picture import CloudPicture
 
@@ -168,22 +170,6 @@ async def get_user_username(username: str, db: AsyncSession) -> User | None:
         return None
 
 
-async def get_all_users(skip: int, limit: int, db: AsyncSession) -> list[User]:
-    """
-    The get_all_users function returns a list of all users in the database.
-
-
-    :param skip:int: Skip the first n users in the database
-    :param limit: int: Limit the number of results returned
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A list of user objects
-    """
-    query = select(User).offset(skip).limit(limit)
-    users = await db.execute(query)
-    result = users.scalars().all()
-    return list(result)
-
-
 async def get_user_profile(user: User, db: AsyncSession):
     """
     The get_user_profile function takes a user object and an async database session as arguments.
@@ -327,3 +313,31 @@ async def change_role(email: str, role: Role, db: AsyncSession) -> User | None:
             await db.rollback()
             raise e
     return None
+
+
+async def search_users(user_filter: UserFilter, db: AsyncSession):
+    """
+    The search_users function takes in a UserFilter object and an AsyncSession object.
+    The function then creates a query that selects all users, with their pictures, comments_user, and ratings loaded.
+    It joins the Comment table to the User table. The user_filter is used to filter the query by its filter method.
+    The user_filter is also used to sort the query by its sort method.
+
+    :param user_filter: UserFilter: Filter the users by their attributes
+    :param db: AsyncSession: Pass in the database session
+    :return: A list of users
+    """
+
+    query = (
+        select(User)
+        .options(selectinload(User.pictures))
+        .options(selectinload(User.comments_user))
+        .options(selectinload(User.ratings))
+      
+    )
+    query = user_filter.filter(query)
+
+    query = user_filter.sort(query)
+    result = (await db.execute(query)).unique()
+    users = result.scalars().all()
+
+    return users

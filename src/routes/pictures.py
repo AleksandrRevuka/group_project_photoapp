@@ -1,17 +1,21 @@
+from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi_filter import FilterDepends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.database.models import User
 from src.repository import pictures as repository_pictures
+from src.schemas.filters import PictureFilter, PictureOut
 from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
                                   PictureResponse, PictureTransform,
                                   PictureUpload)
+from src.schemas.tags import TagResponse
 from src.services.auth import auth_service
 from src.services.cloud_picture import CloudPicture
-from src.services.roles import admin_moderator_user
+from src.services.roles import admin_moderator_user, admin_moderator
 
-router = APIRouter(prefix="/pictures", tags=["pictures"])
+router = APIRouter(tags=["pictures"])
 
 
 @router.post(
@@ -71,12 +75,12 @@ async def upload_picture_to_cloudinary(
 
 
 @router.patch(
-    "/picture/{picture_id}",
+    "/{picture_id}/name",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def update_name_of_picture(
-    id: int,
+    picture_id: int,
     body: PictureNameUpdate,
     current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -94,19 +98,19 @@ async def update_name_of_picture(
     :return: An updated name of the picture
     """
 
-    updated_name = await repository_pictures.update_picture_name(id, body, current_user.id, db)
+    updated_name = await repository_pictures.update_picture_name(picture_id, body, current_user.id, db)
     if updated_name is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment has been not updated")
     return updated_name
 
 
 @router.patch(
-    "/description/{description}",
+    "/{picture_id}/description",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def update_description_of_picture(
-    id: int,
+    picture_id: int,
     body: PictureDescrUpdate,
     current_user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -124,7 +128,7 @@ async def update_description_of_picture(
     :return: The updated_descr object
     """
 
-    updated_descr = await repository_pictures.update_picture_description(id, body, current_user.id, db)
+    updated_descr = await repository_pictures.update_picture_description(picture_id, body, current_user.id, db)
     if updated_descr is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -133,40 +137,33 @@ async def update_description_of_picture(
     return updated_descr
 
 
-@router.get(
-    "/picture/all_pictures",
-    dependencies=[Depends(admin_moderator_user)],
-    description="User, Moderator and Administrator have access",
-)
-async def get_all_pictures(
-    skip: int = 0,
-    limit: int = 10,
-    db: AsyncSession = Depends(get_db),
-):
+@router.get("/", dependencies=[Depends(admin_moderator_user)], response_model=List[PictureOut])
+async def search_pictures(
+    picture_filter: PictureFilter = FilterDepends(PictureFilter), 
+    db: AsyncSession = Depends(get_db)):
     """
-    The get_all_pictures function returns a list of all pictures in the database.
-    The skip and limit parameters are used to paginate the results.
+    The search_pictures function searches for pictures in the database.
+        It takes a PictureFilter object as an argument, which is used to filter the search results.
+        The function returns a list of PictureOut objects.
 
-    :param skip: int: Skip a number of pictures from the database
-    :param limit: int: Limit the number of pictures returned
+    :param picture_filter: PictureFilter: Filter the pictures
     :param db: AsyncSession: Get the database session
-    :param : Get the picture by id
     :return: A list of pictures
     """
 
-    pictures = await repository_pictures.get_all_pictures(skip, limit, db)
+    pictures = await repository_pictures.search_pictures(picture_filter, db)
     if not pictures:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pictures not found")
     return pictures
 
 
 @router.get(
-    "/picture/{id}",
+    "/{picture_id}",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
 async def get_picture_by_id(
-    id: int,
+    picture_id: int,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -179,44 +176,13 @@ async def get_picture_by_id(
     :return: A single picture
     """
 
-    pictures = await repository_pictures.get_picture_by_id(id, db)
+    pictures = await repository_pictures.get_picture_by_id(picture_id, db)
     if not pictures:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
     return pictures
 
 
-@router.get(
-    "/all_pictures/{user_id}",
-    dependencies=[Depends(admin_moderator_user)],
-    description="User, Moderator and Administrator have access",
-)
-async def get_all_pictures_of_user(
-    user_id: int,
-    skip: int = 0,
-    limit: int = 10,
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    The get_all_pictures_of_user function returns all pictures of a user.
-
-    :param user_id: int: Get all the pictures of a specific user
-    :param skip: int: Skip the first n pictures
-    :param limit: int: Limit the number of pictures returned
-    :param db: AsyncSession: Pass the database session to the repository layer
-    :param : Get the user id of the user that is logged in
-    :return: A list of pictures
-    """
-
-    pictures = await repository_pictures.get_all_pictures_of_user(user_id, skip, limit, db)
-    if not pictures:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Pictures of this user not found",
-        )
-    return pictures
-
-
-@router.delete("/all_pictures/{picture_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{picture_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_picture(
     picture_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(auth_service.get_current_user)
 ):
@@ -238,7 +204,7 @@ async def delete_picture(
 
 
 @router.get(
-    "/pictures/picture/{picture_id}/qrcode",
+    "/{picture_id}/qrcode",
     dependencies=[Depends(admin_moderator_user)],
     description="User, Moderator and Administrator have access",
 )
@@ -256,3 +222,27 @@ async def get_qrcode_on_transformed_picture(picture_id: int, db: AsyncSession = 
     if qrcode is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found")
     return qrcode
+
+
+@router.get(
+    "{picture_id}/tags",
+    response_model=List[TagResponse],
+    dependencies=[Depends(admin_moderator)],
+    description="User, Moderator and Administrator have access",
+)
+async def tags_of_picture(
+    picture_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> list:
+    """
+    The tags_of_picture function retrieves all tags for a given picture.
+        Args:
+            picture_id (int): The id of the picture to retrieve tags for.
+
+    :param picture_id: int: Specify the picture id of the picture we want to retrieve
+    :param db: AsyncSession: Pass the database session to the function
+    :param : Get the picture id from the url
+    :return: A list of tags for a given picture
+    """
+    tags = await repository_pictures.retrieve_tags_for_picture(picture_id, db)
+    return tags
