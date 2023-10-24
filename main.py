@@ -81,14 +81,23 @@ async def healthchecker(db: AsyncSession = Depends(get_db)) -> dict:
         logger.error(e, extra={"color_message": color_error})
         raise HTTPException(status_code=500, detail="Error connecting to the database")
 
-
-templates = Jinja2Templates(directory='templates')
 app.mount("/static", StaticFiles(directory="static"), name="style.css")
 app.mount("/images", StaticFiles(directory="images"), name="schema.jpg")
+
+templates = Jinja2Templates(directory='templates')
+
 
 @app.get("/")
 async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "title": "PhotoApp"})
+
+
+app.mount("/_static", StaticFiles(directory="docs/build/html/_static"), name="docs")
+doc_templates = Jinja2Templates(directory='docs/build/html/')
+
+@app.get("/documentation")
+async def documentation(request: Request):
+    return doc_templates.TemplateResponse("index.html", {"request": request})
 
 
 if __name__ == "__main__":

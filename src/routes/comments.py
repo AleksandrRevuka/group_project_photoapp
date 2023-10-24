@@ -30,7 +30,7 @@ async def create_comment(
 
     :param body: CommentCreate: Create a new comment
     :param db: AsyncSession: Pass the database connection to the repository
-    :param : Get the comment id from the url
+    
     :return: A comment object
     """
 
@@ -62,7 +62,7 @@ async def update_comment(
     :param body: CommentUpdate: Get the data from the request body
     :param current_user: User: Get the current user from the auth_service
     :param db: AsyncSession: Get the database session
-    :param : Get the comment id
+
     :return: A comment object
     """
 
@@ -91,7 +91,7 @@ async def remove_comment(
 
     :param comment_id: int: Identify the comment to be deleted
     :param db: AsyncSession: Pass in the database session
-    :param : Specify the id of the comment to be deleted
+
     :return: A 204 status code
     """
     comment = await repository_comments.delete_comment(comment_id, picture_id, db)

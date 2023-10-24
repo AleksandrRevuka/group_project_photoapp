@@ -43,17 +43,15 @@ async def edit_my_profile(
 ) -> dict:
     """
     The edit_my_profile function allows a user to edit their profile.
-        The function takes in the following parameters:
-            name (str): The new username of the user.
-            file (UploadFile): An optional parameter that allows a user to upload an image for their profile picture.
-                If no image is uploaded, then the default avatar will be used instead.
 
-    :param name: str: Get the name of the user from the request body
+    :param name: str: Get the name of the user
     :param file: UploadFile: Upload a file to the server
     :param current_user: User: Get the current user
     :param db: AsyncSession: Get the database session
-    :return: A dictionary with the user and detail keys
+
+    :return: A dictionary with the user and a message
     """
+    
     user_exist = await repository_users.get_user_username(name, db)
 
     if user_exist:
@@ -114,20 +112,21 @@ async def manage_user(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    The manage_user function allows the admin to ban, activate or change role of a user.
-        The function takes in the username of the user to be managed and an action which can be one of:
-            - ban: bans a user if they are active. If they are already banned, it raises an error.
-            - activate: activates a banned user if they are inactive. If they are already active, it raises an error.
-            - change_role: changes role of any given user (except for admins) to any other role except for admin.
+    Manage a user's status, role, or ban.
+    
+    This function allows administrators and moderators to perform actions on a user. Available actions are:
+    - 'ban': Bans an active user. Raises an error if the user is already banned.
+    - 'activate': Activates a banned user. Raises an error if the user is already active.
+    - 'change_role': Changes the role of a user (except for admins) to a different role, excluding 'admin'.
 
-    :param username: str: Specify the username of the user to be managed
-    :param action: Action: Specify what action to take on the user
-    :param role: Role: Specify the new role for a user
-    :param current_user: User: Get the current user
-    :param redis_client: Redis: Specify that the function depends on a redis client
-    :param db: AsyncSession: Get the database session
-    :param : Specify the action that should be performed on the user
-    :return: A tuple of the user and a string with details about what happened
+    :param username: str: The username of the user to be managed.
+    :param action: Action: The action to be taken on the user.
+    :param role: Role: The new role for the user (optional, defaults to 'user').
+    :param current_user: User: The current user performing the action.
+    :param redis_client: Redis: The Redis client used for caching (dependency).
+    :param db: AsyncSession: The database session (dependency).
+
+    :return: Tuple[User, str]: A tuple containing the updated user and a message detailing the action.
     """
 
     user_action = await repository_users.get_user_username(username, db)

@@ -43,10 +43,9 @@ async def upload_picture_to_cloudinary(
     :param current_user: User: Get the user who is currently logged in
     :param transf: PictureTransform: Pass the transformation parameters to the function
     :param db: AsyncSession: Get the database session
-    :param : Get the picture id
+
     :return: A dictionary with the picture data and a detail message
     """
-    print(transf.crop.value)
     public_id = CloudPicture.generate_folder_name(current_user.email)
     transformation = {
         "height": transf.height,
@@ -99,7 +98,7 @@ async def update_name_of_picture(
     :param body: PictureNameUpdate: Get the new name of the picture from the request body
     :param current_user: User: Get the current user from the database
     :param db: AsyncSession: Get the database session
-    :param : Get the id of the picture that we want to update
+
     :return: An updated name of the picture
     """
 
@@ -129,7 +128,7 @@ async def update_description_of_picture(
     :param body: PictureDescrUpdate: Pass the new description of the picture
     :param current_user: User: Get the current user
     :param db: AsyncSession: Get the database session
-    :param : Get the id of the picture we want to update
+
     :return: The updated_descr object
     """
 
@@ -153,6 +152,7 @@ async def search_pictures(
 
     :param picture_filter: PictureFilter: Filter the pictures
     :param db: AsyncSession: Get the database session
+    
     :return: A list of pictures
     """
 
@@ -177,7 +177,7 @@ async def get_picture_by_id(
 
     :param id: int: Specify the id of the picture to be returned
     :param db: AsyncSession: Pass the database connection to the function
-    :param : Get the picture by id
+
     :return: A single picture
     """
 
@@ -197,8 +197,8 @@ async def delete_picture(
     :param picture_id: int: Identify the picture to delete
     :param db: AsyncSession: Pass the database session to the function
     :param current_user: User: Get the current user from the database
+    
     :return: The deleted picture
-    :doc-author: Trelent
     """
     picture = await repository_pictures.remove_picture(picture_id, current_user, db)
 
@@ -220,8 +220,8 @@ async def get_qrcode_on_transformed_picture(picture_id: int, db: AsyncSession = 
 
     :param picture_id: int: Get the picture id from the url
     :param db: AsyncSession: Get the database session
+    
     :return: A qrcode
-    :doc-author: Trelent
     """
     qrcode = await repository_pictures.get_qrcode(picture_id, db)
     if qrcode is None:
@@ -246,7 +246,7 @@ async def tags_of_picture(
 
     :param picture_id: int: Specify the picture id of the picture we want to retrieve
     :param db: AsyncSession: Pass the database session to the function
-    :param : Get the picture id from the url
+
     :return: A list of tags for a given picture
     """
     tags = await repository_pictures.retrieve_tags_for_picture(picture_id, db)
