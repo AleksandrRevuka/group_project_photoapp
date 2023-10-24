@@ -15,7 +15,7 @@ from src.repository.pictures import (get_all_pictures,
                                      update_picture_name)
 from src.schemas.pictures import (PictureDescrUpdate, PictureNameUpdate,
                                   PictureUpload)
-
+from src.conf.messages import messages
 
 class TestRepositoryPictures(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -125,7 +125,7 @@ class TestRepositoryPictures(unittest.IsolatedAsyncioTestCase):
             await update_picture_name(picture_id, mock_body, self.user.id, self.session)
 
         self.assertEqual(context.exception.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(context.exception.detail, "Name of picture can't be empty")
+        self.assertEqual(context.exception.detail, messages.get_message("NAME_OF_PICTURE_CANT_BE_EMPTY"))
         self.session.add.assert_not_called()
         self.session.commit.assert_not_called()
         self.session.refresh.assert_not_called()
@@ -160,7 +160,7 @@ class TestRepositoryPictures(unittest.IsolatedAsyncioTestCase):
             await update_picture_description(id=picture_id, body=mock_body, current_user=self.user.id, db=self.session)
 
         self.assertEqual(context.exception.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(context.exception.detail, "Picture is not found")
+        self.assertEqual(context.exception.detail, messages.get_message("PICTURE_NOT_FOUND"))
 
         self.session.add.assert_not_called()
         self.session.commit.assert_not_called()
@@ -177,7 +177,7 @@ class TestRepositoryPictures(unittest.IsolatedAsyncioTestCase):
             await update_picture_description(id=picture_id, body=mock_body, current_user=self.user.id, db=self.session)
 
         self.assertEqual(context.exception.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(context.exception.detail, "Description of picture can't be empty")
+        self.assertEqual(context.exception.detail, messages.get_message("DESCRIPTION_OF_PICTURE_CANT_BE_EMPTY"))
         self.session.add.assert_not_called()
         self.session.commit.assert_not_called()
         self.session.refresh.assert_not_called()

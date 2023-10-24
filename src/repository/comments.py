@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models import Comment, Picture
 from src.schemas.comments import CommentCreate, CommentUpdate
 from fastapi import HTTPException, status
-
+from src.conf.messages import messages
 
 async def create_comment(
     body: CommentCreate,
@@ -48,10 +48,10 @@ async def update_comment(picture_id, comment_id: int, body: CommentUpdate, curre
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENT_NOT_FOUND"))
 
     if body.text == "":
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Comment can't be empty")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=messages.get_message("COMMENT_CANT_BE_EMPTY"))
 
     comment.text = body.text
     db.add(comment)
@@ -73,7 +73,7 @@ async def delete_comment(comment_id: int, picture_id: int, db: AsyncSession) -> 
     existing_comment = await db.execute(comment_query)
     comment = existing_comment.scalar()
     if not comment:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("COMMENT_NOT_FOUND"))
     try:
         await db.delete(comment)
         await db.commit()

@@ -8,6 +8,7 @@ from src.repository import ratings as repository_rating
 from src.schemas.ratings import RatingResponse, AverageRatingResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator_user
+from src.conf.messages import messages
 
 router = APIRouter(tags=["rating"])
 
@@ -30,10 +31,10 @@ async def create_picture_rating(
     :return: A dictionary with two keys: rating and detail
     """
     if not (1 <= rating <= 5):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rating must be between 1 and 5")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("RATING_MUST_BE_1_TO_5"))
     rating_picture = await repository_rating.create_picture_rating(picture_id, rating, current_user, db)
 
-    return {"rating": rating_picture, "detail": "Rating successfully added"}
+    return {"rating": rating_picture, "detail": messages.get_message("RATING_SUCCESSFULLY_ADDED")}
 
 
 @router.get("{picture_id}/ratings", dependencies=[Depends(admin_moderator_user)], response_model=AverageRatingResponse)
@@ -48,7 +49,7 @@ async def picture_ratings(picture_id: int, db: AsyncSession = Depends(get_db)):
     """
     picture = await repository_rating.picture_ratings(picture_id, db)
     if not picture:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
     return picture
 
 
@@ -71,5 +72,5 @@ async def remove_photo_rating(
 
     deleted_rating = await repository_rating.remove_rating(picture_id, user_id, db)
     if not deleted_rating:
-        raise HTTPException(status_code=400, detail="Unable to delete rating")
+        raise HTTPException(status_code=400, detail=messages.get_message("UNABLE_DELETE_RATING"))
     return deleted_rating
