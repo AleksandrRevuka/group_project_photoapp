@@ -45,17 +45,21 @@ async def upload_picture_to_cloudinary(
     :param : Get the picture id
     :return: A dictionary with the picture data and a detail message
     """
-
+    print(transf.crop.value)
     public_id = CloudPicture.generate_folder_name(current_user.email)
     transformation = {
         "height": transf.height,
         "width": transf.width,
-        "crop": transf.crop,
+        "crop": transf.crop.value,
         "angle": transf.angle,
-        "gravity": transf.gravity,
+        "gravity": transf.gravity.value,
+        "effect": transf.effect.value,
     }
-    info_file = CloudPicture.upload_picture(file.file, public_id, transformation)
-    picture_url = CloudPicture.get_url_for_picture(public_id, info_file)
+    try:
+        info_file = CloudPicture.upload_picture(file.file, public_id, transformation)
+        picture_url = CloudPicture.get_url_for_picture(public_id, info_file)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")
     
     tag_names = []
     if len(body.tags[0]) > 0:
