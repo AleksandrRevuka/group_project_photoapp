@@ -4,15 +4,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.db import get_db
 from src.database.models import User
-from src.repository import rating as repository_rating
-from src.schemas.rating import RatingResponse, AverageRatingResponse
+from src.repository import ratings as repository_rating
+from src.schemas.ratings import RatingResponse, AverageRatingResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator_user
+from src.conf.messages import messages
 
-router = APIRouter(prefix="/rating", tags=["rating"])
+router = APIRouter(tags=["rating"])
 
 
-@router.post("/ratings/{picture_id}", dependencies=[Depends(admin_moderator_user)], response_model=RatingResponse)
+@router.post("{picture_id}/ratings", dependencies=[Depends(admin_moderator_user)], response_model=RatingResponse)
 async def create_picture_rating(
     picture_id: int, rating: int, current_user: User = Depends(auth_service.get_current_user), db: AsyncSession = Depends(get_db)
 ):
@@ -30,13 +31,13 @@ async def create_picture_rating(
     :return: A dictionary with two keys: rating and detail
     """
     if not (1 <= rating <= 5):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rating must be between 1 and 5")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("RATING_MUST_BE_1_TO_5"))
     rating_picture = await repository_rating.create_picture_rating(picture_id, rating, current_user, db)
 
-    return {"rating": rating_picture, "detail": "Rating successfully added"}
+    return {"rating": rating_picture, "detail": messages.get_message("RATING_SUCCESSFULLY_ADDED")}
 
 
-@router.get("/ratings/{picture_id}", dependencies=[Depends(admin_moderator_user)], response_model=AverageRatingResponse)
+@router.get("{picture_id}/ratings", dependencies=[Depends(admin_moderator_user)], response_model=AverageRatingResponse)
 async def picture_ratings(picture_id: int, db: AsyncSession = Depends(get_db)):
     """
     The picture_ratings function returns a list of ratings for the picture with the given id.
@@ -48,11 +49,11 @@ async def picture_ratings(picture_id: int, db: AsyncSession = Depends(get_db)):
     """
     picture = await repository_rating.picture_ratings(picture_id, db)
     if not picture:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Picture not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("PICTURE_NOT_FOUND"))
     return picture
 
 
-@router.delete("/ratings_delete/", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin)])
+@router.delete("{picture_id}/ratings_delete", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin)])
 async def remove_photo_rating(
     picture_id: int,
     user_id: int,
@@ -65,11 +66,11 @@ async def remove_photo_rating(
     :param picture_id: int: Get the picture id of the photo that is being rated
     :param user_id: int: Identify the user who is rating the photo
     :param db: AsyncSession: Get the database connection
-    :param : Get the picture id
+
     :return: The deleted rating
     """
 
     deleted_rating = await repository_rating.remove_rating(picture_id, user_id, db)
     if not deleted_rating:
-        raise HTTPException(status_code=400, detail="Unable to delete rating")
+        raise HTTPException(status_code=400, detail=messages.get_message("UNABLE_DELETE_RATING"))
     return deleted_rating

@@ -15,10 +15,9 @@ async def get_tags(db: AsyncSession):
     :return: A list of tags
     :doc-author: Trelent
     """
-    async with db.begin():
-        query = await db.execute(select(Tag))
-        tags = query.scalars().all()
-        return tags
+    query = await db.execute(select(Tag))
+    tags = query.scalars().all()
+    return tags
 
 
 async def get_tag_by_id(tag_id: int, db: AsyncSession):
@@ -32,11 +31,10 @@ async def get_tag_by_id(tag_id: int, db: AsyncSession):
     :return: A tag object
     :doc-author: Trelent
     """
-    async with db.begin():
-        query = select(Tag).filter(Tag.id == tag_id)
-        tag = await db.execute(query)
-        result = tag.scalar()
-        return result
+    query = select(Tag).filter(Tag.id == tag_id)
+    tag = await db.execute(query)
+    result = tag.scalar()
+    return result
 
 
 async def get_tag_by_tagname(tagname: str, db: AsyncSession):
@@ -50,11 +48,10 @@ async def get_tag_by_tagname(tagname: str, db: AsyncSession):
     :return: A tag object that has the given tagname
     :doc-author: Trelent
     """
-    async with db.begin():
-        query = select(Tag).filter(Tag.tagname == tagname)
-        tag = await db.execute(query)
-        result = tag.scalar()
-        return result
+    query = select(Tag).filter(Tag.tagname == tagname)
+    tag = await db.execute(query)
+    result = tag.scalar()
+    return result
 
 
 async def update_tag(tag_id: int, body: TagModel, db: AsyncSession):
@@ -72,10 +69,9 @@ async def update_tag(tag_id: int, body: TagModel, db: AsyncSession):
     tag = await get_tag_by_id(tag_id, db)
 
     if tag:
-        async with db.begin():
-            tag.tagname = body.tagname
+        tag.tagname = body.tagname
 
-            tag_response = TagResponse(id=tag.id, tagname=tag.tagname, created_at=tag.created_at, updated_at=tag.updated_at)
+        tag_response = TagResponse(id=tag.id, tagname=tag.tagname, created_at=tag.created_at, updated_at=tag.updated_at)
 
         return tag_response
 
@@ -92,23 +88,8 @@ async def remove_tag(tag_id: int, db: AsyncSession):
     tag = await get_tag_by_id(tag_id, db)
 
     if tag:
-        async with db.begin():
-            await db.delete(tag)
-            await db.commit()
+        await db.delete(tag)
+        await db.commit()
 
 
-async def retrieve_tags_for_picture(picture_id: int, db: AsyncSession):
-    """
-    The retrieve_tags_for_picture function takes in a picture_id and an AsyncSession object.
-    It then uses the given session to execute a query that joins the Tag, Picture, and picture_tags tables together.
-    The function returns all of the tags associated with the given picture.
 
-    :param picture_id: int: Specify the picture to retrieve tags for
-    :param db: AsyncSession: Pass the database session to the function
-    :return: A list of tags for a given picture
-    """
-
-    picture = await db.scalar(select(Picture).filter(Picture.id == picture_id))
-    if picture:
-        tags = [tag for tag in await picture.awaitable_attrs.tags_picture]
-    return tags

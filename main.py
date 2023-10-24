@@ -3,26 +3,29 @@ import logging
 import click
 import redis.asyncio as redis_async
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi_limiter import FastAPILimiter
+
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf.config import init_async_redis
 from src.database.db import get_db
-from src.routes import auth, comments, pictures, tags, users, rating, filter
+from src.routes import auth, comments, pictures, ratings, tags, users
 
 logger = logging.getLogger("uvicorn")
 
 app = FastAPI()
 
-app.include_router(auth.router, prefix="/api")
-app.include_router(users.router, prefix="/api")
-app.include_router(comments.router, prefix="/api")
-app.include_router(tags.router, prefix="/api")
-app.include_router(pictures.router, prefix="/api")
-app.include_router(rating.router, prefix="/api")
-app.include_router(filter.router, prefix="/api")
+app.include_router(auth.router, prefix="/api/auth")
+app.include_router(users.router, prefix="/api/users")
+app.include_router(tags.router, prefix="/api/tags")
+app.include_router(comments.router, prefix="/api/pictures")
+app.include_router(pictures.router, prefix="/api/pictures")
+app.include_router(ratings.router, prefix="/api/pictures")
 
 
 @app.on_event("startup")
@@ -77,6 +80,24 @@ async def healthchecker(db: AsyncSession = Depends(get_db)) -> dict:
         color_error = click.style(e, bold=True, fg="red", italic=True)
         logger.error(e, extra={"color_message": color_error})
         raise HTTPException(status_code=500, detail="Error connecting to the database")
+
+app.mount("/static", StaticFiles(directory="static"), name="style.css")
+app.mount("/images", StaticFiles(directory="images"), name="schema.jpg")
+
+templates = Jinja2Templates(directory='templates')
+
+
+@app.get("/")
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "title": "PhotoApp"})
+
+
+app.mount("/_static", StaticFiles(directory="docs/build/html/_static"), name="docs")
+doc_templates = Jinja2Templates(directory='docs/build/html/')
+
+@app.get("/documentation")
+async def documentation(request: Request):
+    return doc_templates.TemplateResponse("index.html", {"request": request})
 
 
 if __name__ == "__main__":

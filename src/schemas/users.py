@@ -1,9 +1,11 @@
 from datetime import datetime
+import enum
 from typing import List
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 from src.database.models import Role
+from src.schemas.comments import CommentDB
 from src.schemas.pictures import PictureUser
 
 
@@ -48,11 +50,6 @@ class RatingDB(BaseModel):
     id: int
     rating: int
     picture_id: int
-
-
-class CommentDB(BaseModel):
-    id: int
-    text: str
 
 
 class UserInfo(UserDb):
@@ -141,5 +138,12 @@ class UserProfile(BaseModel):
     is_active: bool
     pictures_count: int | None
     comments_count: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None
+    updated_at: datetime | None
+    
+        
+class Action(enum.Enum):
+    ban: str = "ban"
+    activate: str = "activate"
+    change_role: str = "change_role"
+    

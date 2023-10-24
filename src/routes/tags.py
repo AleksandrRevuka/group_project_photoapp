@@ -7,30 +7,25 @@ from src.repository import tags as repository_tags
 from src.database.db import get_db
 from src.schemas.tags import TagResponse, TagModel
 from src.services.roles import admin_moderator
+from src.conf.messages import messages
 
-router = APIRouter(prefix="/tags", tags=["tags"])
+router = APIRouter(tags=["tags"])
 
 
 @router.get(
-    "",
+    "/",
     response_model=List[TagResponse],
     dependencies=[Depends(admin_moderator)],
 )
 async def get_tags(db: AsyncSession = Depends(get_db)):
     """
     The get_tags function returns a list of all tags in the database.
-        ---
-        get:
-            description: Get a list of all tags in the database.
-            responses:  # A dictionary containing status codes and their corresponding responses. The keys are HTTP
-            status codes, and the values are dictionaries with two keys, "description" (a string) and "content"
-            (a dictionary). The content key's value is another dictionary that contains one key-value
-            pair for each media type supported by this endpoint; for example, {"application/json": {...}}
-            would be used to describe JSON output.
 
-    :param db: AsyncSession: Pass in the database session
-    :return: A list of tags
+    :param db: AsyncSession: Get a database connection from the dependency injection container
+    
+    :return: A list of all tags in the database
     """
+
     tags = await repository_tags.get_tags(db)
     return tags
 
@@ -46,7 +41,7 @@ async def get_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     """
     tag = await repository_tags.get_tag_by_id(tag_id, db)
     if tag is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("TAGNAME_NOT_FOUND"))
     return tag
 
 
@@ -70,9 +65,9 @@ async def update_tag(tag_id: int, body: TagModel, db: AsyncSession = Depends(get
         if exist_tag is None:
             updated_tag = await repository_tags.update_tag(tag_id, body, db)
             return updated_tag
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="tagname already exist")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=messages.get_message("TAGNAME_ALREADY_EXIST"))
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("TAGNAME_NOT_FOUND"))
 
 
 @router.delete("/{tag_id}", dependencies=[Depends(admin_moderator)], status_code=status.HTTP_204_NO_CONTENT)
@@ -88,31 +83,7 @@ async def delete_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
     """
     tag = await repository_tags.get_tag_by_id(tag_id, db)
     if tag is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tagname not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("TAGNAME_NOT_FOUND"))
 
     result = await repository_tags.remove_tag(tag_id, db)
     return result
-
-
-@router.get(
-    "/picture/{picture_id}",
-    response_model=List[TagResponse],
-    dependencies=[Depends(admin_moderator)],
-    description="User, Moderator and Administrator have access",
-)
-async def tags_of_picture(
-    picture_id: int,
-    db: AsyncSession = Depends(get_db),
-) -> list:
-    """
-    The tags_of_picture function retrieves all tags for a given picture.
-        Args:
-            picture_id (int): The id of the picture to retrieve tags for.
-
-    :param picture_id: int: Specify the picture id of the picture we want to retrieve
-    :param db: AsyncSession: Pass the database session to the function
-    :param : Get the picture id from the url
-    :return: A list of tags for a given picture
-    """
-    tags = await repository_tags.retrieve_tags_for_picture(picture_id, db)
-    return tags

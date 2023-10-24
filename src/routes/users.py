@@ -1,4 +1,6 @@
+from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi_filter import FilterDepends
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,14 +8,17 @@ from src.conf.config import init_async_redis
 from src.database.db import get_db
 from src.database.models import Role, User
 from src.repository import users as repository_users
-from src.schemas.user import UserDb, UserInfo, UserProfile, UserResponse
+from src.schemas.comments import CommentDB
+from src.schemas.filters import UserFilter, UserOut
+from src.schemas.users import Action, UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
-from src.services.roles import admin, admin_moderator
+from src.services.roles import admin, admin_moderator, admin_moderator_user
+from src.conf.messages import messages
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["users"])
 
 
-@router.get("/me/", response_model=UserInfo)
+@router.get("/me", response_model=UserInfo)
 async def read_users_me(
     current_user: User = Depends(auth_service.get_current_user), redis_client: Redis = Depends(init_async_redis)
 ) -> User:
@@ -29,7 +34,7 @@ async def read_users_me(
     return current_user
 
 
-@router.patch("/edit_my_profile", response_model=UserResponse)
+@router.patch("/me", response_model=UserResponse)
 async def edit_my_profile(
     name: str,
     file: UploadFile = File(default=None),
@@ -38,50 +43,41 @@ async def edit_my_profile(
 ) -> dict:
     """
     The edit_my_profile function allows a user to edit their profile.
-        The function takes in the following parameters:
-            name (str): The new username of the user.
-            file (UploadFile): An optional parameter that allows a user to upload an image for their profile picture.
-                If no image is uploaded, then the default avatar will be used instead.
 
-    :param name: str: Get the name of the user from the request body
+    :param name: str: Get the name of the user
     :param file: UploadFile: Upload a file to the server
     :param current_user: User: Get the current user
     :param db: AsyncSession: Get the database session
-    :return: A dictionary with the user and detail keys
+
+    :return: A dictionary with the user and a message
     """
+    
     user_exist = await repository_users.get_user_username(name, db)
 
     if user_exist:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this name already exists!")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_WITH_THIS_NAME_ALREADY_EXISTS"))
 
     user = await repository_users.edit_my_profile(current_user.email, file, name, db)
 
-    return {"user": user, "detail": "My profile was successfully edited"}
+    return {"user": user, "detail": messages.get_message("MY_PROFILE_WAS_SUCCESSFULLY_EDITED")}
 
 
-@router.get("/all_users", dependencies=[Depends(admin)], response_model=list[UserDb])
-async def all_users(
-    skip: int = 0,
-    limit: int = 10,
-    current_user: User = Depends(auth_service.get_current_user),
-    redis_client: Redis = Depends(init_async_redis),
-    db: AsyncSession = Depends(get_db),
-) -> list:
+@router.get("/", dependencies=[Depends(admin_moderator_user)], response_model=List[UserOut])
+async def search_users(
+    user_filter: UserFilter = FilterDepends(UserFilter), 
+    db: AsyncSession = Depends(get_db)):
     """
-    The all_users function returns a list of all users in the database.
+    The search_users function searches for users in the database.
 
-    :param skip: int: Skip a number of users in the database
-    :param limit: int: Limit the number of users returned
-    :param current_user: User: Get the current user
-    :param redis_client: Redis: Pass in the redis client object
-    :param db: AsyncSession: Create a database connection
-    :return: A list of user objects
+    :param user_filter: UserFilter: Define the filter object that will be used to search for users
+    :param db: AsyncSession: Get the database session
+    :return: A list of users
     """
-    key_to_clear = f"user:{current_user.email}"
-    await redis_client.delete(key_to_clear)
 
-    users = await repository_users.get_all_users(skip, limit, db)
+    users = await repository_users.search_users(user_filter, db)
+
     return users
+
 
 
 @router.get("/{username}", dependencies=[Depends(admin_moderator)], response_model=UserProfile)
@@ -103,101 +99,82 @@ async def user_profile(
         user = await repository_users.get_user_profile(user_exist, db)
         return user
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
 
 
-@router.patch("/ban_user", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
-async def ban_user(
+@router.patch("/{username}", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
+async def manage_user(
     username: str,
+    action: Action,
+    role: Role = Role.user,
     current_user: User = Depends(auth_service.get_current_user),
     redis_client: Redis = Depends(init_async_redis),
     db: AsyncSession = Depends(get_db),
-) -> dict:
+):
     """
-    The ban_user function is used to ban a user.
+    Manage a user's status, role, or ban.
+    
+    This function allows administrators and moderators to perform actions on a user. Available actions are:
+    - 'ban': Bans an active user. Raises an error if the user is already banned.
+    - 'activate': Activates a banned user. Raises an error if the user is already active.
+    - 'change_role': Changes the role of a user (except for admins) to a different role, excluding 'admin'.
 
-    :param username: str: Get the username of the user that will be banned
-    :param current_user: User: Get the current user logged in
-    :param redis_client: Redis: Connect to the redis database
-    :param db: AsyncSession: Get the database session
-    :return: A dictionary with the user and a detail message
-    """
+    :param username: str: The username of the user to be managed.
+    :param action: Action: The action to be taken on the user.
+    :param role: Role: The new role for the user (optional, defaults to 'user').
+    :param current_user: User: The current user performing the action.
+    :param redis_client: Redis: The Redis client used for caching (dependency).
+    :param db: AsyncSession: The database session (dependency).
 
-    user_banned = await repository_users.get_user_username(username, db)
-
-    if user_banned:
-        key_to_clear = f"user:{user_banned.email}"
-        await redis_client.delete(key_to_clear)
-
-        if user_banned.username == current_user.username:
-            return {"user": user_banned, "detail": "You can't ban yourself"}
-        elif not user_banned.is_active:
-            return {"user": user_banned, "detail": "User has already been banned"}
-
-        else:
-            user = await repository_users.ban_user(user_banned.email, db)
-            return {"user": user, "detail": f"The user {user_banned.username} has been banned"}
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
-
-
-@router.patch("/activate_user", dependencies=[Depends(admin)], response_model=UserResponse)
-async def activate_user(
-    username: str,
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    The activate_user function is used to activate a user.
-        The function takes in the username of the user to be activated and returns a dictionary containing
-        the details of that user and an appropriate message.
-
-    :param username: str: Get the username of the user to be deactivated
-    :param db: AsyncSession: Get the database connection
-    :return: The user and a detail message
-    """
-    user_activate = await repository_users.get_user_username(username, db)
-    if user_activate:
-        user = await repository_users.activate_user(user_activate.email, db)
-        return {"user": user, "detail": f"The user {user_activate.username} has been activated"}
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
-
-
-@router.patch("/change_role", dependencies=[Depends(admin)], response_model=UserResponse)
-async def change_role(
-    username: str,
-    role: Role,
-    current_user: User = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """
-    The change_role function allows the admin to change the role of a user.
-        The function takes in three parameters: username, role and current_user.
-        The username parameter is used to get the user from the database using
-        repository_users.get_user_username(). If this returns a valid user, then
-        we check if that user is active and confirmed (not banned). If they are not
-        banned or not confirmed, then we check if it's not our own account by comparing
-        usernames with current_user.username != user.username . If all these conditions are met
-
-    :param username: str: Get the username of the user whose role we want to change
-    :param role: Role: Pass the role that will be assigned to the user
-    :param current_user: User: Get the current user
-    :param db: AsyncSession: Get the database session
-    :return: A dictionary containing the user and a detail message
+    :return: Tuple[User, str]: A tuple containing the updated user and a message detailing the action.
     """
 
-    user = await repository_users.get_user_username(username, db)
-    if user:
-        if user.is_active and user.confirmed:
-            if current_user.username != user.username:
-                user = await repository_users.change_role(user.email, role, db)
-                return {"user": user, "detail": "The user's role has been changed"}
+    user_action = await repository_users.get_user_username(username, db)
 
+    if not user_action:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
+
+    key_to_clear = f"user:{user_action.email}"
+    await redis_client.delete(key_to_clear)
+
+    if user_action.username == current_user.username:
+            return {"user": user_action, "detail": messages.get_message("YOU_CANT_BAN_YOURSELF")}
+  
+    if action == Action.ban:
+        if current_user.roles == (Role.admin or Role.moderator):
+            if user_action.is_active:
+                if user_action.username == current_user.username:
+                    return {"user": user_action, "detail": messages.get_message("YOU_CANT_BAN_YOURSELF")}
+                else:
+                    user = await repository_users.ban_user(user_action.email, db)
+                    return {"user": user, "detail": f"{user_action.username} " + messages.get_message("USER_HAS_BEEN_BANNED")}
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change your role")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_HAS_ALREADY_BANNED"))
         else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="You can't change the role of a banned user or not confirmed"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.get_message("YOU_DONT_HAVE_PERMISSION_TO_BAN_USERS"))
+
+    elif action == Action.activate:
+        if current_user.roles == Role.admin:
+            if not user_action.is_active:
+                user = await repository_users.activate_user(user_action.email, db)
+                return {"user": user, "detail": f"{user_action.username} " + messages.get_message("USER_HAS_BEEN_ACTIVATED")}
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_ALREADY_ACTIVATED"))
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.get_message("YOU_DONT_HAVE_PERMISSION_FOR_ACTIVATE_USERS"))
+
+    elif action == Action.change_role:
+        if current_user.roles == Role.admin:
+            if role is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                    detail=messages.get_message("NEW_ROLE_MUST_BE_SPECIFIED_FOR_CHANGING_ROLE"))
+            
+            user = await repository_users.change_role(user_action.email, role, db)
+            return {"user": user, "detail": messages.get_message("USERS_ROLE_HAS_BEEN_CHANGED_TO") + f" {role}"}
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                                detail=messages.get_message("YOU_DONT_HAVE_PERMISSION_FOR_CHANGE_USER_ROLES"))
+    
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail=messages.get_message("INVALID_ACTION_SPECIFIED"))
