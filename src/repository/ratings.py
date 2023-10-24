@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 
 from src.database.models import User, Rating, Picture
+from src.conf.messages import messages
 
 
 async def create_picture_rating(
@@ -27,13 +28,13 @@ async def create_picture_rating(
 
     picture = await db.get(Picture, picture_id)
     if not picture or picture.user_id == current_user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot rate your own picture")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("YOU_CANT_RATE_YOUR_OWN_PICTURE"))
 
     exist_rating = await db.execute(select(Rating).where((Rating.user_id == current_user.id) & (Rating.picture_id == picture_id)))
     existing_rating = exist_rating.scalar()
 
     if existing_rating:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You have already rated this picture")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("YOU_HAVE_ALREADY_RATED_THIS_PICTURE"))
 
     new_rating = Rating(user_id=current_user.id, picture_id=picture_id, rating=rating)
     db.add(new_rating)

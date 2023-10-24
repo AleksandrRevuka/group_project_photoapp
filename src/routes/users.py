@@ -13,6 +13,7 @@ from src.schemas.filters import UserFilter, UserOut
 from src.schemas.users import Action, UserDb, UserInfo, UserProfile, UserResponse
 from src.services.auth import auth_service
 from src.services.roles import admin, admin_moderator, admin_moderator_user
+from src.conf.messages import messages
 
 router = APIRouter(tags=["users"])
 
@@ -56,11 +57,11 @@ async def edit_my_profile(
     user_exist = await repository_users.get_user_username(name, db)
 
     if user_exist:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this name already exists!")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_WITH_THIS_NAME_ALREADY_EXISTS"))
 
     user = await repository_users.edit_my_profile(current_user.email, file, name, db)
 
-    return {"user": user, "detail": "My profile was successfully edited"}
+    return {"user": user, "detail": messages.get_message("MY_PROFILE_WAS_SUCCESSFULLY_EDITED")}
 
 
 @router.get("/", dependencies=[Depends(admin_moderator_user)], response_model=List[UserOut])
@@ -100,7 +101,7 @@ async def user_profile(
         user = await repository_users.get_user_profile(user_exist, db)
         return user
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
 
 
 @router.patch("/{username}", dependencies=[Depends(admin_moderator)], response_model=UserResponse)
@@ -132,49 +133,49 @@ async def manage_user(
     user_action = await repository_users.get_user_username(username, db)
 
     if not user_action:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found!")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=messages.get_message("USER_NOT_FOUND"))
 
     key_to_clear = f"user:{user_action.email}"
     await redis_client.delete(key_to_clear)
 
     if user_action.username == current_user.username:
-            return {"user": user_action, "detail": "You can't ban yourself"}
+            return {"user": user_action, "detail": messages.get_message("YOU_CANT_BAN_YOURSELF")}
   
     if action == Action.ban:
         if current_user.roles == (Role.admin or Role.moderator):
             if user_action.is_active:
                 if user_action.username == current_user.username:
-                    return {"user": user_action, "detail": "You can't ban yourself"}
+                    return {"user": user_action, "detail": messages.get_message("YOU_CANT_BAN_YOURSELF")}
                 else:
                     user = await repository_users.ban_user(user_action.email, db)
-                    return {"user": user, "detail": f"The user {user_action.username} has been banned"}
+                    return {"user": user, "detail": f"{user_action.username} " + messages.get_message("USER_HAS_BEEN_BANNED")}
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already banned")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_HAS_ALREADY_BANNED"))
         else:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You don't have permission to ban users.")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.get_message("YOU_DONT_HAVE_PERMISSION_TO_BAN_USERS"))
 
     elif action == Action.activate:
         if current_user.roles == Role.admin:
             if not user_action.is_active:
                 user = await repository_users.activate_user(user_action.email, db)
-                return {"user": user, "detail": f"The user {user_action.username} has been activated"}
+                return {"user": user, "detail": f"{user_action.username} " + messages.get_message("USER_HAS_BEEN_ACTIVATED")}
             else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already activated")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.get_message("USER_ALREADY_ACTIVATED"))
         else:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You don't have permission to activate users.")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.get_message("YOU_DONT_HAVE_PERMISSION_FOR_ACTIVATE_USERS"))
 
     elif action == Action.change_role:
         if current_user.roles == Role.admin:
             if role is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
-                                    detail="New role must be specified for changing the role.")
+                                    detail=messages.get_message("NEW_ROLE_MUST_BE_SPECIFIED_FOR_CHANGING_ROLE"))
             
             user = await repository_users.change_role(user_action.email, role, db)
-            return {"user": user, "detail": f"The user's role has been changed to {role}"}
+            return {"user": user, "detail": messages.get_message("USERS_ROLE_HAS_BEEN_CHANGED_TO") + f" {role}"}
         else:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                                detail="You don't have permission to change user roles.")
+                                detail=messages.get_message("YOU_DONT_HAVE_PERMISSION_FOR_CHANGE_USER_ROLES"))
     
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
-                            detail="Invalid action specified. Supported actions: ban, activate, change_role.")
+                            detail=messages.get_message("INVALID_ACTION_SPECIFIED"))
