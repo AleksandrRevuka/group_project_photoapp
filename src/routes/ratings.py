@@ -65,7 +65,7 @@ async def remove_photo_rating(
     :param picture_id: int: Get the picture id of the photo that is being rated
     :param user_id: int: Identify the user who is rating the photo
     :param db: AsyncSession: Get the database connection
-    :param : Get the picture id
+
     :return: The deleted rating
     """
 

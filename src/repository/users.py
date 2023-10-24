@@ -1,8 +1,7 @@
 
-from typing import Any, Sequence
 from fastapi import UploadFile
 from libgravatar import Gravatar
-from sqlalchemy import Row, RowMapping, func, select,  outerjoin
+from sqlalchemy import func, select,  outerjoin
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import NoResultFound
@@ -172,13 +171,14 @@ async def get_user_username(username: str, db: AsyncSession) -> User | None:
 
 async def get_user_profile(user: User, db: AsyncSession):
     """
-    The get_user_profile function takes a user object and an async database session as arguments.
-    It then returns a UserProfile object with the following attributes:
-        id, roles, username, email, avatar (url), is_active (boolean), pictures_count (int), comments_count(int)
-        created_at(datetime.datetime), updated_at(datetime.datetime)
-
+    The get_user_profile function is used to get a user's profile.
+        Args:
+            user (User): The User object that we want to get the profile for.
+            db (AsyncSession): The database session that will be used for querying the database.
+    
     :param user: User: Pass the user object to the function
     :param db: AsyncSession: Pass the database session to the function
+    
     :return: A userprofile object
     """
 

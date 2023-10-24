@@ -19,18 +19,12 @@ router = APIRouter(tags=["tags"])
 async def get_tags(db: AsyncSession = Depends(get_db)):
     """
     The get_tags function returns a list of all tags in the database.
-        ---
-        get:
-            description: Get a list of all tags in the database.
-            responses:  # A dictionary containing status codes and their corresponding responses. The keys are HTTP
-            status codes, and the values are dictionaries with two keys, "description" (a string) and "content"
-            (a dictionary). The content key's value is another dictionary that contains one key-value
-            pair for each media type supported by this endpoint; for example, {"application/json": {...}}
-            would be used to describe JSON output.
 
-    :param db: AsyncSession: Pass in the database session
-    :return: A list of tags
+    :param db: AsyncSession: Get a database connection from the dependency injection container
+    
+    :return: A list of all tags in the database
     """
+
     tags = await repository_tags.get_tags(db)
     return tags
 
